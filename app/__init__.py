@@ -1,11 +1,13 @@
 from sanic import Sanic
 from sanic.response import json
+from sanic.exceptions import ServerError
+from .owner_info import get_owner_data
 
 app = Sanic()
 
 @app.route('/')
-async def test(req):
-    return json({'test':'test'})
-
-if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=8080)
+async def lookup(req):
+    if 'address' in req.raw_args:
+        return json(get_owner_data(req.raw_args['address']))
+    else:
+        raise ServerError("No address query", status_code=400)

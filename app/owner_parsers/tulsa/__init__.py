@@ -1,6 +1,6 @@
 import requests
-from get_form_data import get_form_data
-from get_owner_data import get_owner_data
+from .get_form_data import get_form_data
+from .get_owner_data import get_owner_data
 
 def fetch_owner_data(address):
     # prep data first so we don't make request if we can't understand

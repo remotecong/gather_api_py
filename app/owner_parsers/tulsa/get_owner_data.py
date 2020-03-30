@@ -1,6 +1,6 @@
 from bs4 import BeautifulSoup
-from po_boxes import is_po_box
-from get_last_name import get_last_name
+from .po_boxes import is_po_box
+from .get_last_name import get_last_name
 
 def bs(html):
     return BeautifulSoup(html, 'html.parser')
