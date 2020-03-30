@@ -1,10 +1,6 @@
 import requests
-from bs4 import BeautifulSoup
 from get_form_data import get_form_data
-
-def bs(html):
-    return BeautifulSoup(html, 'html.parser')
-
+from get_owner_data import get_owner_data
 
 def fetch_owner_data(address):
     # prep data first so we don't make request if we can't understand
@@ -18,31 +14,8 @@ def fetch_owner_data(address):
         })
 
         r = s.post('https://assessor.tulsacounty.org/assessor-property-view.php', data=data)
-        return parse_owner_data(r.text)
+        return get_owner_data(r.text)
 
-
-def parse_owner_data(html):
-    soup = bs(html)
-
-    # check homstead
-    homestead = False
-    q = soup.select('#adjustments tbody tr td:first-child')
-    for el in q:
-        if el.string == 'Homestead':
-            homestead = len(el.next_sibling.contents) > 0
-
-    # check mailing address and name
-    mailing_address = None
-    owner_name = None
-    q = soup.select('#general td')
-    for el in q:
-        if el.string == 'Owner mailing address':
-            mailing_address = f"{el.next_sibling.contents[0]}, {el.next_sibling.contents[2]}"
-        elif el.string == 'Owner name':
-            owner_name = el.next_sibling.string
-
-    # return results
-    return { 'homestead': homestead, 'mailing_address': mailing_address, 'owner_name': owner_name }
 
 
 if __name__ == '__main__':
