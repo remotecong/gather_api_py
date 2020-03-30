@@ -49,6 +49,12 @@ def get_owner_data(html):
     }
 
 if __name__ == '__main__':
+    import json
+
     with open('assessor.html', 'r') as f:
-        print(get_owner_data(f.read()))
+        d = get_owner_data(f.read())
+        with open('data.json', 'w') as j:
+            json.dump(d, j)
+            print(d)
+
 
