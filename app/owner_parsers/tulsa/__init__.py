@@ -17,22 +17,6 @@ def fetch_owner_data(address):
             'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15; rv:74.0) Gecko/20100101 Firefox/74.0',
         })
 
-        # start php session
-        r = s.get('https://assessor.tulsacounty.org/assessor-property-search.php')
-
-        # check for agreement form cta
-        soup = bs(r.text)
-        cta = soup.find(name='button', type='submit')
-        if cta:
-            r = s.post('https://assessor.tulsacounty.org/assessor-property-search.php', data={'accepted': 'accepted'})
-
-            # verify no cta after acceptance
-            soup = bs(r.text)
-            cta = soup.find(name='button', type='submit')
-            if cta:
-                raise Exception('couldn\'t accept usage agreement')
-
-        # use data prepared at beginning of function
         r = s.post('https://assessor.tulsacounty.org/assessor-property-view.php', data=data)
         return parse_owner_data(r.text)
 
