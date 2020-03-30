@@ -1,4 +1,4 @@
-import requests
+from requests_futures.sessions import FuturesSession
 from .get_form_data import get_form_data
 from .get_owner_data import get_owner_data
 
@@ -7,14 +7,14 @@ def fetch_owner_data(address):
     # the address
     data = get_form_data(address)
 
-    with requests.Session() as s:
+    with FuturesSession() as s:
         # updated browser
         s.headers.update({
             'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15; rv:74.0) Gecko/20100101 Firefox/74.0',
         })
 
         r = s.post('https://assessor.tulsacounty.org/assessor-property-view.php', data=data)
-        return get_owner_data(r.text)
+        return get_owner_data(r.result().text)
 
 
 

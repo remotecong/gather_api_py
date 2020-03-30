@@ -1,4 +1,4 @@
-import requests
+from requests_futures.sessions import FuturesSession
 import re
 from bs4 import BeautifulSoup
 
@@ -12,13 +12,14 @@ def get_url(address):
 
 def get_phone_numbers(address):
     url = get_url(address)
-    r = requests.get(
+    with FuturesSession() as s:
+        r = s.get(
             url,
             headers={
                 'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15; rv:74.0) Gecko/20100101 Firefox/74.0',
             }
         )
-    return parse_html(r.text)
+        return parse_html(r.result().text)
 
 
 def parse_html(html):
