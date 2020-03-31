@@ -1,0 +1,12 @@
+version: '2'
+
+services:
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    volumes:
+      - .:/code/
+      - /code/venv/
+    ports:
+      - 7730:8080
