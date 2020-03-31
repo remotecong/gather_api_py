@@ -1,0 +1,7 @@
+version: '2'
+
+services:
+  api:
+    build: .
+    ports:
+      - 7730:8080

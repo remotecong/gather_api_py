@@ -33,7 +33,6 @@ def get_form_data(address):
         clean_addr = re.sub(' [NEWS]$', '', clean_addr)
 
         matches = re.search(r'(\d+) ([NSEW]) ([\w\s]+) ([NSEW]\s)?([A-Za-z]+)( [NSEW])?$', clean_addr)
-        print(matches.groups())
 
         # defaulting to street if we can't find a match
         streettype = 'ST'
