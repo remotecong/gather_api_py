@@ -21,7 +21,7 @@ python gather.py
 ## Other territories
 In an effort to prepare this app for other territories, things have moved. Any new territories should be a module added under [app/owner_parsers](app/owner_parsers). Copy the [app/owner_parsers/tulsa](app/owner_parsers/tulsa) module and repurpose it to scrape the appropriate municipality's assessor or other service that can look up homeowners. The output should match:
 
-```json
+```javascript
 {
   "owner_name": "DOE, JOHN S", /* string */
   "lives_there": true, /* boolean */
