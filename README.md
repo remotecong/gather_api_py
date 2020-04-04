@@ -1,15 +1,14 @@
 # Gather-API
 > Web scraper to search an address and find the owner's name then return a reverse address phone number lookup
 
-## Setup - Docker
+## Setup - Docker (port 7730 by default)
 ```bash
 git clone https://github.com/remotecong/gather_api_py
 cd gather_api_py
 docker-compose up -d
-open "localhost:7730"
 ```
 
-## Setup - Python
+## Setup - Python (port 8080 by default)
 ```bash
 git clone https://github.com/remotecong/gather_api_py
 python -m venv venv

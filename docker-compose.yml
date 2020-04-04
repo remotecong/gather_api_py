@@ -5,3 +5,5 @@ services:
     build: .
     ports:
       - 7730:8080
+  redis:
+    image: redis:5.0.6-alpine
