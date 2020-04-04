@@ -1,9 +1,11 @@
 from sanic import Sanic
 from sanic.response import json
 from sanic.exceptions import ServerError
+from sanic_cors import CORS, cross_origin
 from .lookup import lookup
 
 app = Sanic()
+CORS(app)
 
 @app.route('/')
 async def root(req):

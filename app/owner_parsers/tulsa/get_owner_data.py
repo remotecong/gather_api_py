@@ -1,14 +1,8 @@
-from bs4 import BeautifulSoup
 from .po_boxes import is_po_box
 from .get_last_name import get_last_name
 
-def bs(html):
-    return BeautifulSoup(html, 'html.parser')
 
-
-def get_owner_data(html):
-    soup = bs(html)
-
+def get_owner_data(soup):
     # check homstead
     homestead = False
     q = soup.select('#adjustments tbody tr td:first-child')

@@ -1,6 +1,11 @@
 from requests_futures.sessions import FuturesSession
 from .get_form_data import get_form_data
 from .get_owner_data import get_owner_data
+from bs4 import BeautifulSoup
+
+def bs(html):
+    return BeautifulSoup(html, 'html.parser')
+
 
 def fetch_owner_data(address):
     # prep data first so we don't make request if we can't understand
@@ -14,7 +19,16 @@ def fetch_owner_data(address):
         })
 
         r = s.post('https://assessor.tulsacounty.org/assessor-property-view.php', data=data)
-        return get_owner_data(r.result().text)
+
+        soup = bs(r.result().text)
+        # check if multiple results are returned for given address
+        q = soup.select('#pickone tr[goto]')
+
+        if q:
+            r = s.get(f"https://assessor.tulsacounty.org/{q[0]['goto']}")
+            soup = bs(r.result().text)
+
+        return get_owner_data(soup)
 
 
 

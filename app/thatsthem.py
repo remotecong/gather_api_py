@@ -1,6 +1,7 @@
 from requests_futures.sessions import FuturesSession
 import re
 from bs4 import BeautifulSoup
+import pydash
 
 
 def get_url(address):
@@ -31,14 +32,14 @@ def parse_html(html):
 def parse_row(row):
     return {
         'name': row.find('h2').text.strip(),
-        'numbers': [get_phone_number(e) for e in row.find_all(itemprop='telephone')],
+        'numbers': list(map(get_phone_number, row.find_all(itemprop='telephone'))),
     }
 
 
 def get_phone_number(elem):
     return {
         'number': elem.text.strip(),
-        'is_mobile': elem.parent['data-title'] == 'Mobile',
+        'is_mobile': pydash.get(elem, 'parent.data-title') == 'Mobile',
     }
 
 
