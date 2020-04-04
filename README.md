@@ -5,7 +5,7 @@
 ```bash
 git clone https://github.com/remotecong/gather_api_py
 cd gather_api_py
-docker-compose up
+docker-compose up -d
 open "localhost:7730"
 ```
 
