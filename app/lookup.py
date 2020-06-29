@@ -1,14 +1,17 @@
+""" lookup aggregator """
+import json
+import redis
 from .owner_info import get_owner_data
 from .thatsthem import get_phone_numbers
-from datetime import timedelta
-import redis
-import json
 
-r = redis.Redis(host='redis')
+R = redis.Redis(host='redis')
 
+"""
+looks up address
+"""
 def lookup(address):
     # try cache first
-    cache = r.get(address)
+    cache = R.get(address)
     if cache:
         return json.loads(cache)
 
@@ -25,7 +28,5 @@ def lookup(address):
         if (d['lives_there'] and ln in n) or\
             (not d['lives_there'] and ln not in n):
             d['phones'].append(p)
-
-    r.setex(address, timedelta(hours=1), value=json.dumps(d))
-
+    R.set(address, json.dumps(d))
     return d

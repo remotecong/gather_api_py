@@ -1,5 +1,6 @@
-from .po_boxes import is_po_box
+""" get tulsa assessor data """
 from .get_last_name import get_last_name
+from .po_boxes import is_po_box
 
 
 def get_owner_data(soup):

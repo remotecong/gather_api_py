@@ -1,7 +1,8 @@
+""" gather thing """
+from bs4 import BeautifulSoup
 from requests_futures.sessions import FuturesSession
 from .get_form_data import get_form_data
 from .get_owner_data import get_owner_data
-from bs4 import BeautifulSoup
 
 def bs(html):
     return BeautifulSoup(html, 'html.parser')
