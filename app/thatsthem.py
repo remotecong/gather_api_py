@@ -23,13 +23,33 @@ def get_phone_numbers(address):
                 'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15; rv:74.0) Gecko/20100101 Firefox/74.0',
             }
         )
+        print("--- {} ---".format(address))
         return parse_html(r.result().text)
 
+class ThatsThemPhpException(Exception):
+    """ when we hit php fatal error """
+
+class ThatsThemNoMatchException(Exception):
+    """ when we don't have any address matches """
+
+class ThatsThemRateLimitException(Exception):
+    """ rate limit hit """
 
 def parse_html(html):
     """ parse response into usable data """
     soup = BeautifulSoup(html, 'html.parser')
     rows = soup.select('.ThatsThem-people-record.row')
+
+    # check for rate limits
+    if re.search(r'(exceeded the maximum number of queries|<h1>403 Forbidden</h1>)', html):
+        raise ThatsThemRateLimitException
+    if re.search(r'<b>Fatal error</b>', html):
+        raise ThatsThemPhpException
+    if re.search(r'We did not find any results for your query', html):
+        if input("no match on thatsthem, continue? ") == "y":
+            return []
+        raise ThatsThemNoMatchException
+
     return [parse_row(r) for r in rows]
 
 def parse_row(row):

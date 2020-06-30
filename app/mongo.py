@@ -30,6 +30,16 @@ def get_addresses_without_thatsthem_data(territory_id):
     """ find all address without thatsthem data """
     return ADDR.find({"territoryId": territory_id, "thatsThemData": None})
 
+def get_docs_without_phone_num_but_ttd(territory_id):
+    """ find all docs with thatsthem data but no phones """
+    return ADDR.find({
+        "territoryId": territory_id,
+        "$and": [
+            {"phoneNumbers": {"$exists": True}},
+            {"phoneNumbers": {"$size": 0}}
+        ]
+    })
+
 def add_owner_data(doc, owner_data):
     """ patch in owner_data """
     ADDR.update_one(doc, {
@@ -51,3 +61,10 @@ def get_gather_address(address):
         addr_pieces["PlaceName"],
         addr_pieces["StateName"]
         )
+
+def add_phone_data(doc, updates):
+    """ patch in owner_data """
+    updates["lastUpdate"] = datetime.now()
+    ADDR.update_one(doc, {
+        "$set": updates
+        })
