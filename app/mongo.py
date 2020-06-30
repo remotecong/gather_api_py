@@ -68,3 +68,7 @@ def add_phone_data(doc, updates):
     ADDR.update_one(doc, {
         "$set": updates
         })
+
+def get_all_docs_for(territory_id):
+    """ get all docs for a given territory """
+    return ADDR.find({"territoryId": territory_id})
