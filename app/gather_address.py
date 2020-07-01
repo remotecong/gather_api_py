@@ -66,20 +66,37 @@ def compile_final_doc(doc, thatsthem_data):
         if lname_re.search(thatsthem["name"]):
             thats_them_match_count += 1
             phone_numbers = phone_numbers + thatsthem["numbers"]
-        else:
-            print("{} !== {}".format(last_name, thatsthem["name"]))
     if thats_them_match_count == 0 and ("skip_no_match" not in doc or not doc["skip_no_match"]):
-        print(doc["address"])
-        print(" <== {} ==> {}".format(first_piece_of_name, name))
-        print(lname_re)
-        if input("move on? ") != "y":
-            raise Exception("Sorry bud")
-        return {
-            "name": name,
-            "phoneNumbers": phone_numbers,
-            "thatsThemData": thatsthem_data,
-            "skip_no_match": True
-        }
+        print("### I thought the last name was {}".format(first_piece_of_name))
+        print("### (technically I thought it was {})".format(last_name))
+        print("### because the full name is {}".format(name))
+        for thatsthem in thatsthem_data:
+            print("and {} doesn't match {}".format(first_piece_of_name, thatsthem["name"]))
+        print("""### but I can't find a match in ThatsThem
+              so do you want to
+              (f)ix name, (m)ove on, or (c)onfirm no match?""")
+        action = input("(f/m): ")
+        if action == "f":
+            """
+                make shallow doc copy
+                just take _id
+                add ownerLivesThere: True
+                add ownerName: input("New Last Name: ")
+                then just return self(shallow_copy_doc, thatsthem_data)
+            """
+            shallow_doc = {
+                "_id": doc["_id"],
+                "ownerLivesThere": True,
+                "ownerName": input("New Last Name: ")
+            }
+            return compile_final_doc(shallow_doc, thatsthem_data)
+        else:
+            return {
+                "name": name,
+                "phoneNumbers": phone_numbers,
+                "thatsThemData": thatsthem_data,
+                "skip_no_match": action.strip().lower() == "c"
+            }
     phone_numbers.sort(key=phone_number_sort)
     return {
         "name": name,

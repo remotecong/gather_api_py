@@ -92,7 +92,7 @@ def get_gather_address(address):
 def add_phone_data(doc, updates):
     """ patch in owner_data """
     updates["lastUpdate"] = datetime.now()
-    ADDR.update_one(doc, {
+    ADDR.update_one({"_id": doc["_id"]}, {
         "$set": updates
         })
 
