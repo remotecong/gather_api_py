@@ -31,7 +31,7 @@ for street, residences in territory.items():
         if "ownerLivesThere" in r:
             if "phoneNumbers" in r:
                 #   first two numbers, any more we don't track (unless some disconnected)
-                phones = [p["number"] for p in r["phoneNumbers"]][0:2]
+                phones = list({p["number"] for p in r["phoneNumbers"]})[0:2]
                 phones = ", ".join(phones) if len(phones) > 0 else "No Number Found"
                 print("{}\t{}\t{}".format(r["name"], printable_addr, phones))
             elif r["ownerLivesThere"]:
