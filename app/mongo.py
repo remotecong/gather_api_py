@@ -1,14 +1,23 @@
 """ database entrypoint """
 from datetime import datetime
+import os
+from os.path import join, dirname
+import sys
+from dotenv import load_dotenv
 from pymongo import MongoClient
 import usaddress
 
-CLIENT = MongoClient(port=27017)
-DB = CLIENT.address_test
-ADDR = DB.address_test
+DOT_ENV = join(dirname(dirname(__file__)), '.env')
+load_dotenv(DOT_ENV)
 
-if not DB.fly_not_test:
-    DB.create_collection("fly_not_test")
+
+CLIENT = MongoClient(os.getenv("MONGO_URI"))
+DB = CLIENT.db
+if not DB:
+    print("NO DB!")
+    sys.exit(1)
+
+ADDR = DB.address
 
 def add_address(territory_id, address):
     """ add address to collection it ain't already there """

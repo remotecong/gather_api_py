@@ -5,3 +5,4 @@ tt.html
 .config
 sample.xlsx
 venv/
+.env
