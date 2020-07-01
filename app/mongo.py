@@ -50,7 +50,7 @@ def change_address_and_add_owner_data(doc, address, owner_data):
 
 def get_ungathered_address_for(territory_id):
     """ find all addresses without gather details """
-    return ADDR.find({"territoryId": territory_id, "ownerName": None})
+    return ADDR.find({"territoryId": territory_id, "ownerName": None}, batch_size=10)
 
 def get_addresses_without_thatsthem_data(territory_id):
     """ find all address without thatsthem data """
