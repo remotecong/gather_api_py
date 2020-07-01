@@ -40,7 +40,7 @@ def compile_final_doc(doc, thatsthem_data):
         first_piece_of_name = name.split(",")[0].strip()
         last_name = re.sub(
             r' (TRUST|FAMILY|FAMILY TRUST|FAMILY REV TRUST|' +
-            r'2020 TRUST|REV TRU?S?T?|' +
+            r'2020 TRUST|REV TRU?S?T?|FAMILY REVOCABLE TRUST|' +
             r'REV TRUST C/O.*|REVOCABLE TRUST DATED.*|' +
             r'LIVING TRUST|FAMILY TRUST C/O.*)?$',
             '',
@@ -51,6 +51,7 @@ def compile_final_doc(doc, thatsthem_data):
         last_name = re.sub(r'-', '-?', last_name)
         last_name = re.sub(r' ', ' ?', last_name)
         last_name = re.sub(r'\'', '\'?', last_name)
+        last_name = re.sub(r'OVERMEYER', 'OVERME?YER', last_name)
         last_name = re.sub(r'^MC([A-Z]+)', r'MC ?\1', last_name)
     elif len(thatsthem_data) > 0:
         name = thatsthem_data[0]["name"]
@@ -113,9 +114,17 @@ DOCS = get_addresses_without_thatsthem_data(TERR)
 if DOCS:
     for doc in DOCS:
         if "ownerLivesThere" in doc:
-            gather_address = get_gather_address(doc["address"])
-            thatsthem_data = get_phone_numbers(gather_address)
-            add_phone_data(doc, compile_final_doc(doc, thatsthem_data))
+            try:
+                gather_address = get_gather_address(doc["address"])
+                thatsthem_data = get_phone_numbers(gather_address)
+                add_phone_data(doc, compile_final_doc(doc, thatsthem_data))
+            except ThatsThemNoDataException as no_data:
+                add_phone_data(doc, {
+                    "thatsThemData": thatsthem_data,
+                    "phoneNumbers": [],
+                    "name": "Current Resident",
+                    "skip_no_match": True,
+                    })
         else:
             print(">>> No Assessor data found for {}".format(doc["address"]))
 
