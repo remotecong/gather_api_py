@@ -4,6 +4,7 @@ import sys
 from mongo import (get_ungathered_address_for,
                    get_gather_address,
                    add_owner_data,
+                   change_address_and_add_owner_data,
                    get_addresses_without_thatsthem_data,
                    get_docs_without_phone_num_but_ttd,
                    add_phone_data)
@@ -27,6 +28,7 @@ def phone_number_sort(rec):
     return 1
 
 def compile_final_doc(doc, thatsthem_data):
+    """ connects existing doc with address to gather data """
     # name for record
     name = None
     # last name for matching
@@ -36,9 +38,20 @@ def compile_final_doc(doc, thatsthem_data):
     if doc["ownerLivesThere"]:
         name = doc["ownerName"]
         first_piece_of_name = name.split(",")[0].strip()
+        last_name = re.sub(
+            r' (TRUST|FAMILY|FAMILY TRUST|FAMILY REV TRUST|' +
+            r'2020 TRUST|REV TRU?S?T?|' +
+            r'REV TRUST C/O.*|REVOCABLE TRUST DATED.*|' +
+            r'LIVING TRUST|FAMILY TRUST C/O.*)?$',
+            '',
+            first_piece_of_name,
+            flags=re.IGNORECASE
+        )
         #   allow matches for names including hyphens
-        first_piece_of_name = re.sub(r'-', '-?', first_piece_of_name)
-        last_name = re.sub(r' (TRUST|FAMILY|FAMILY TRUST|FAMILY REV TRUST|REV TRUST C/O.*)?$', '', first_piece_of_name, flags=re.IGNORECASE)
+        last_name = re.sub(r'-', '-?', last_name)
+        last_name = re.sub(r' ', ' ?', last_name)
+        last_name = re.sub(r'\'', '\'?', last_name)
+        last_name = re.sub(r'^MC([A-Z]+)', r'MC ?\1', last_name)
     elif len(thatsthem_data) > 0:
         name = thatsthem_data[0]["name"]
         last_name = name.split(" ")[-1]
@@ -66,8 +79,7 @@ def compile_final_doc(doc, thatsthem_data):
             "thatsThemData": thatsthem_data,
             "skip_no_match": True
         }
-    else:
-        phone_numbers.sort(key=phone_number_sort)
+    phone_numbers.sort(key=phone_number_sort)
     return {
         "name": name,
         "phoneNumbers": phone_numbers,
@@ -83,7 +95,14 @@ if DOCS:
             assessor_data = get_owner_data(gather_address)
             add_owner_data(doc, assessor_data)
         except Exception as e:
-            print("ERROR ==> {}".format(e))
+            if input("update address? (y/n)") == "y":
+                print("old address: {}".format(doc["address"]))
+                new_address = input("new address: ")
+                gather_address = get_gather_address(new_address)
+                assessor_data = get_owner_data(gather_address)
+                change_address_and_add_owner_data(doc, new_address, assessor_data)
+            else:
+                print("ERROR ==> {}".format(e))
 
 DOCS = get_docs_without_phone_num_but_ttd(TERR)
 if DOCS:
@@ -93,8 +112,11 @@ if DOCS:
 DOCS = get_addresses_without_thatsthem_data(TERR)
 if DOCS:
     for doc in DOCS:
-        gather_address = get_gather_address(doc["address"])
-        thatsthem_data = get_phone_numbers(gather_address)
-        add_phone_data(doc, compile_final_doc(doc, thatsthem_data))
+        if "ownerLivesThere" in doc:
+            gather_address = get_gather_address(doc["address"])
+            thatsthem_data = get_phone_numbers(gather_address)
+            add_phone_data(doc, compile_final_doc(doc, thatsthem_data))
+        else:
+            print(">>> No Assessor data found for {}".format(doc["address"]))
 
 print("<> <> done <> <>")

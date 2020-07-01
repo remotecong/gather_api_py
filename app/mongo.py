@@ -22,6 +22,23 @@ def add_address(territory_id, address):
         ))
         ADDR.insert(doc)
 
+def change_address_and_add_owner_data(doc, address, owner_data):
+    """ updates wrong address and adds assessor results """
+    addr_pieces = usaddress.tag(address)[0]
+    updates = {
+        "lastUpdate": datetime.now(),
+        "ownerName": owner_data["owner_name"],
+        "ownerLivesThere": owner_data["lives_there"],
+        "address": address,
+        "street": " ".join((
+            addr_pieces["StreetNamePreDirectional"],
+            addr_pieces["StreetName"],
+            addr_pieces["StreetNamePostType"]
+        ))
+    }
+    ADDR.update_one(doc, {"$set": updates})
+
+
 def get_ungathered_address_for(territory_id):
     """ find all addresses without gather details """
     return ADDR.find({"territoryId": territory_id, "ownerName": None})
@@ -36,7 +53,8 @@ def get_docs_without_phone_num_but_ttd(territory_id):
         "territoryId": territory_id,
         "$and": [
             {"phoneNumbers": {"$exists": True}},
-            {"phoneNumbers": {"$size": 0}}
+            {"phoneNumbers": {"$size": 0}},
+            {"skip_no_match": {"$exists": False}},
         ]
     })
 
