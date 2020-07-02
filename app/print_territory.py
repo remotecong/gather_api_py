@@ -50,6 +50,7 @@ def print_territory(territory_id):
             # DO NOT CALL!
             if dnc:
                 ppp(name, printable_addr, "Do Not Call", "DNC")
+                return
 
             phone_numbers = res["phoneNumbers"] if "phoneNumbers" in res else []
             # first two numbers, any more we don't track (unless some disconnected)
