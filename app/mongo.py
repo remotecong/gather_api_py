@@ -19,11 +19,11 @@ if not DB:
 
 ADDR = DB.address
 
-def add_address(territory_id, address):
+def add_address(territory_id, doc):
     """ add address to collection it ain't already there """
-    doc = {"territoryId": territory_id, "address": address}
+    doc.update({"territoryId": territory_id})
     if not ADDR.find_one(doc):
-        addr_pieces = usaddress.tag(address)[0]
+        addr_pieces = usaddress.tag(doc["address"])[0]
         doc["street"] = " ".join((
             addr_pieces["StreetNamePreDirectional"],
             addr_pieces["StreetName"],
@@ -64,6 +64,7 @@ def get_docs_without_phone_num_but_ttd(territory_id):
             {"phoneNumbers": {"$exists": True}},
             {"phoneNumbers": {"$size": 0}},
             {"skip_no_match": {"$exists": False}},
+            {"overrideLastName": {"$exists": False}},
         ]
     })
 

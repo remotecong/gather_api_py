@@ -35,7 +35,13 @@ def compile_final_doc(doc, thatsthem_data):
     last_name = None
     first_piece_of_name = None
     thats_them_match_count = 0
-    if doc["ownerLivesThere"]:
+    has_override_name = "overrideLastName" in doc
+    if has_override_name:
+        # just use this value for all names
+        name = doc["overrideLastName"]
+        first_piece_of_name = name
+        last_name = name
+    elif doc["ownerLivesThere"]:
         name = doc["ownerName"]
         first_piece_of_name = name.split(",")[0].strip()
         last_name = re.sub(
@@ -51,7 +57,6 @@ def compile_final_doc(doc, thatsthem_data):
         last_name = re.sub(r'-', '-?', last_name)
         last_name = re.sub(r' ', ' ?', last_name)
         last_name = re.sub(r'\'', '\'?', last_name)
-        last_name = re.sub(r'OVERMEYER', 'OVERME?YER', last_name)
         last_name = re.sub(r'^MC([A-Z]+)', r'MC ?\1', last_name)
     elif len(thatsthem_data) > 0:
         name = thatsthem_data[0]["name"]
@@ -69,13 +74,13 @@ def compile_final_doc(doc, thatsthem_data):
     if thats_them_match_count == 0 and ("skip_no_match" not in doc or not doc["skip_no_match"]):
         print("### I thought the last name was {}".format(first_piece_of_name))
         print("### (technically I thought it was {})".format(last_name))
-        print("### because the full name is {}".format(name))
+        print("### because the full name is {}\n".format(name))
         for thatsthem in thatsthem_data:
             print("and {} doesn't match {}".format(first_piece_of_name, thatsthem["name"]))
-        print("""### but I can't find a match in ThatsThem
+        print("""\n### but I can't find a match in ThatsThem
               so do you want to
               (f)ix name, (m)ove on, or (c)onfirm no match?""")
-        action = input("(f/m): ")
+        action = input("(f/m/c): ")
         if action == "f":
             """
                 make shallow doc copy
@@ -87,17 +92,24 @@ def compile_final_doc(doc, thatsthem_data):
             shallow_doc = {
                 "_id": doc["_id"],
                 "ownerLivesThere": True,
-                "ownerName": input("New Last Name: ")
+                "overrideLastName": input("New Last Name: "),
+                "originalName": name
             }
             return compile_final_doc(shallow_doc, thatsthem_data)
-        else:
-            return {
-                "name": name,
-                "phoneNumbers": phone_numbers,
-                "thatsThemData": thatsthem_data,
-                "skip_no_match": action.strip().lower() == "c"
-            }
+        return {
+            "name": name,
+            "phoneNumbers": phone_numbers,
+            "thatsThemData": thatsthem_data,
+            "skip_no_match": action.strip().lower() == "c"
+        }
     phone_numbers.sort(key=phone_number_sort)
+    if has_override_name:
+        return {
+            "name": doc["originalName"],
+            "phoneNumbers": phone_numbers,
+            "thatsThemData": thatsthem_data,
+            "overrideLastName": doc["overrideLastName"],
+        }
     return {
         "name": name,
         "phoneNumbers": phone_numbers,
@@ -107,13 +119,13 @@ def compile_final_doc(doc, thatsthem_data):
 DOCS = get_ungathered_address_for(TERR)
 if DOCS:
     for doc in DOCS:
-        print(doc)
         gather_address = get_gather_address(doc["address"])
         try:
             assessor_data = get_owner_data(gather_address)
             add_owner_data(doc, assessor_data)
         except Exception as e:
-            if input("update address? (y/n)") == "y":
+            print("=== {}".format(doc["address"]))
+            if input("Assessor couldn't find address, change address? (y/n)") == "y":
                 print("old address: {}".format(doc["address"]))
                 new_address = input("new address: ")
                 gather_address = get_gather_address(new_address)
