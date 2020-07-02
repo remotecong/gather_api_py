@@ -1,6 +1,7 @@
 """ module to actual print the territory data """
 import sys
 from mongo import get_all_docs_for, get_gather_address
+from names import pretty_print_name
 
 def key_residence(res):
     """ mapper for sorting residences """
@@ -45,7 +46,7 @@ def print_territory(territory_id):
                 ppp("Unknown", printable_addr, "Do Not Call" if dnc else "N/A", "DNC")
                 return
 
-            name = res["name"] if "name" in res else "Current Resident"
+            name = pretty_print_name(res["name"]) if "name" in res else "Current Resident"
 
             # DO NOT CALL!
             if dnc:
