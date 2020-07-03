@@ -1,6 +1,7 @@
 """ module to actual print the territory data """
 import sys
-from mongo import get_all_docs_for, get_gather_address
+from addresses import get_gather_address, get_street
+from mongo import get_all_docs_for
 from names import pretty_print_name
 
 def key_residence(res):
@@ -22,7 +23,7 @@ def get_territory_docs(territory_id):
     territory = {}
     for doc in get_all_docs_for(territory_id):
         if "street" in doc:
-            street = doc["street"]
+            street = get_street(doc["address"])
             if street not in territory:
                 territory[street] = []
             territory[street].append(doc)
@@ -44,14 +45,14 @@ def print_territory(territory_id):
             # assessor missed this one
             if "ownerLivesThere" not in res:
                 ppp("Unknown", printable_addr, "Do Not Call" if dnc else "N/A", "DNC")
-                return
+                continue
 
             name = pretty_print_name(res["name"]) if "name" in res else "Current Resident"
 
             # DO NOT CALL!
             if dnc:
                 ppp(name, printable_addr, "Do Not Call", "DNC")
-                return
+                continue
 
             phone_numbers = res["phoneNumbers"] if "phoneNumbers" in res else []
             # first two numbers, any more we don't track (unless some disconnected)

@@ -5,7 +5,6 @@ from os.path import join, dirname
 import sys
 from dotenv import load_dotenv
 from pymongo import MongoClient
-import usaddress
 
 DOT_ENV = join(dirname(dirname(__file__)), '.env')
 load_dotenv(DOT_ENV)
@@ -77,18 +76,6 @@ def add_owner_data(doc, owner_data):
             "ownerLivesThere": owner_data["lives_there"]
         }
         })
-
-def get_gather_address(address):
-    """ get gather address from address """
-    addr_pieces = usaddress.tag(address)[0]
-    return "{} {} {} {}, {}, {}".format(
-        addr_pieces["AddressNumber"],
-        addr_pieces["StreetNamePreDirectional"],
-        addr_pieces["StreetName"],
-        addr_pieces["StreetNamePostType"],
-        addr_pieces["PlaceName"],
-        addr_pieces["StateName"]
-        )
 
 def add_phone_data(doc, updates):
     """ patch in owner_data """

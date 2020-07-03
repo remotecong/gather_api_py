@@ -48,10 +48,7 @@ def parse_html(html):
     if re.search(r'We did not find any results for your query', html):
         # this is a valid response, but we may need to debug if address is malformed
         # if it happens repeatedly
-        print("ThatsThemNoMatchException!")
-        return []
-        # if we need to debug later on
-        # raise ThatsThemNoMatchException
+        raise ThatsThemNoMatchException
 
     return [parse_row(r) for r in rows]
 

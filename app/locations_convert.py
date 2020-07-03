@@ -5,8 +5,6 @@ from mongo import add_address
 
 DATA = pd.read_excel("sample.xlsx")
 
-KEYS_WE_CARE_ABOUT = ("Territory number", "Address", "Status")
-
 TARGET_TERR = sys.argv[1]
 
 ROW_COUNT = DATA.shape[0]
