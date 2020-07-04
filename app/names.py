@@ -64,6 +64,10 @@ def clean_last_name(lname):
         return match[1].title() + match[2].upper() + match[3]
     return lname
 
+def clean_first_m_lname(name):
+    """ clean typical renter name results """
+    return re.sub(r' [A-Z] ', " ", name)
+
 
 def pretty_print_name(name):
     """ try to clean up names """
@@ -71,7 +75,7 @@ def pretty_print_name(name):
     return mr_mrs_last_first(name) or \
         mr_mrs_last_first_last(name) or \
         last_first(name) or \
-        name
+        clean_first_m_lname(name)
 
 if __name__ == "__main__":
     TEST_NAMES = {

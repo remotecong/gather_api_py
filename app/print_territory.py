@@ -25,6 +25,12 @@ def get_territory_docs(territory_id):
         territory[street].append(doc)
     return territory.items()
 
+def phone_number_sort(num):
+    """ prep phone numbers for sorting tulsa numbers first """
+    if num.startswith("918-"):
+        return 0
+    return 1
+
 def print_territory(territory_id):
     """ print territory outright """
     print("=== Printing Territory {} ===".format(territory_id))
@@ -50,7 +56,9 @@ def print_territory(territory_id):
 
             phone_numbers = res["phoneNumbers"] if "phoneNumbers" in res else []
             # first two numbers, any more we don't track (unless some disconnected)
-            phones = list({p["number"] for p in phone_numbers})[0:2]
+            uniq_phones = list({p["number"] for p in phone_numbers})
+            uniq_phones.sort(key=phone_number_sort)
+            phones = uniq_phones[0:2]
 
             if len(phones) > 1:
                 phones = "\"{}\"".format("\n".join(phones))
