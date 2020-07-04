@@ -29,9 +29,6 @@ def fetch_owner_data(address):
 
         goto_link = get_goto_link(html)
         if goto_link:
-            with open("temp.html", "w") as f:
-                f.write(html)
-            print("GOTO LINK: " + goto_link)
             req = ses.get("https://assessor.tulsacounty.org/" + goto_link)
 
         return get_owner_data(req.result().text)
