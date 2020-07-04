@@ -19,7 +19,7 @@ def get_territory_docs(territory_id):
     """ collects all docs for territory """
     territory = {}
     for doc in get_all_docs_for(territory_id):
-        street = doc.get("street", get_street(doc["address"]))
+        street = get_street(doc["address"])
         if street not in territory:
             territory[street] = []
         territory[street].append(doc)
