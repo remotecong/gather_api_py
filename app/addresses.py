@@ -54,10 +54,7 @@ def get_street(address):
         elif key == "StreetNamePostType":
             printed_pieces.append(piece[0:3])
         elif key == "StreetName":
-            street = re.sub(r' North$', "", piece)
-            street = re.sub(r' South$', "", street)
-            street = re.sub(r' East$', "", street)
-            street = re.sub(r' West$', "", street)
+            street = re.sub(r' (N|North|S|South|E|East|W|West)$', "", piece)
             printed_pieces.append(street)
     return " ".join(printed_pieces)
 
