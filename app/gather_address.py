@@ -25,7 +25,7 @@ def phone_number_sort(rec):
         return 0
     return 1
 
-def compile_final_doc(doc, thatsthem_data):
+def compile_final_doc(doc, thatsthem_data, ignore_no_data=False):
     """ connects existing doc with address to gather data """
     # name for record
     name = None
@@ -59,7 +59,7 @@ def compile_final_doc(doc, thatsthem_data):
     elif len(thatsthem_data) > 0:
         name = thatsthem_data[0]["name"]
         last_name = name.split(" ")[-1]
-    else:
+    elif not ignore_no_data:
         raise ThatsThemNoDataException("no owner at {}".format(doc["address"]))
 
     # filter all thatsthem data for last_name
@@ -86,13 +86,6 @@ def compile_final_doc(doc, thatsthem_data):
         if action == "q":
             raise Exception("Goodbye!")
         if action == "f":
-            """
-                make shallow doc copy
-                just take _id
-                add ownerLivesThere: True
-                add ownerName: input("New Last Name: ")
-                then just return self(shallow_copy_doc, thatsthem_data)
-            """
             shallow_doc = {
                 "_id": doc["_id"],
                 "ownerLivesThere": True,
@@ -198,7 +191,7 @@ def get_thatsthem_data(doc, override_address=None):
             raise Exception("Goodbye!")
 
         # give back empty result set
-        add_phone_data(doc, compile_final_doc(doc, []))
+        add_phone_data(doc, compile_final_doc(doc, [], ignore_no_data=True))
 
     except ThatsThemNoDataException:
         add_phone_data(doc, {
