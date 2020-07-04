@@ -15,20 +15,14 @@ def ppp(name, address, phones, notes=None):
     else:
         print("{}\t{}\t{}".format(name, address, phones))
 
-class TerritoryMissingStreetException(Exception):
-    """ exception thrown when street name missing """
-
 def get_territory_docs(territory_id):
     """ collects all docs for territory """
     territory = {}
     for doc in get_all_docs_for(territory_id):
-        if "street" in doc:
-            street = get_street(doc["address"])
-            if street not in territory:
-                territory[street] = []
-            territory[street].append(doc)
-        else:
-            raise TerritoryMissingStreetException
+        street = doc.get("street", get_street(doc["address"]))
+        if street not in territory:
+            territory[street] = []
+        territory[street].append(doc)
     return territory.items()
 
 def print_territory(territory_id):

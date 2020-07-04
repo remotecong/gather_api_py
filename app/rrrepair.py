@@ -1,23 +1,21 @@
 """ actually does the lookups """
 import re
-import sys
 from mongo import (
     get_ungathered_address_for,
     add_owner_data,
     change_address_and_add_owner_data,
     get_addresses_without_thatsthem_data,
-    get_docs_without_phone_num_but_ttd,
+    get_all_docs,
     add_phone_data
 )
 from addresses import get_gather_address, get_verbose_address
 from geocode import find_location_by_bad_address
 from owner_info import get_owner_data
 from owner_parsers.tulsa import fetch_owner_data_from_permalink
-from thatsthem import get_phone_numbers, ThatsThemNoMatchException
-
+from thatsthem import ThatsThemNoMatchException
 
 class ThatsThemNoDataException(Exception):
-    """ custom error for thatsthem errors """
+    """ thatsthem has nothing for address """
 
 def phone_number_sort(rec):
     """ prep phone numbers for sorting tulsa numbers first """
@@ -83,48 +81,31 @@ def compile_final_doc(doc, thatsthem_data):
         print("\n### but I can't find a match in ThatsThem so do you want to")
         print("(f)ix name, (m)ove on, (c)onfirm no match, or (q)uit?")
         action = input("f/m/c/q: ")
+        print()
         if action == "q":
             raise Exception("Goodbye!")
         if action == "f":
-            """
-                make shallow doc copy
-                just take _id
-                add ownerLivesThere: True
-                add ownerName: input("New Last Name: ")
-                then just return self(shallow_copy_doc, thatsthem_data)
-            """
             shallow_doc = {
                 "_id": doc["_id"],
                 "ownerLivesThere": True,
-                "overrideLastName": input("New Last Name: "),
+                "overrideLastName": input("New Last Name: ").strip(),
                 "originalName": name
             }
             return compile_final_doc(shallow_doc, thatsthem_data)
         return {
-            "name": name,
+            "name": doc.get("originalName", name),
             "phoneNumbers": phone_numbers,
             "thatsThemData": thatsthem_data,
             "skip_no_match": action.strip().lower() == "c"
         }
     phone_numbers.sort(key=phone_number_sort)
-    if has_override_name:
-        return {
-            "name": doc["originalName"],
-            "phoneNumbers": phone_numbers,
-            "thatsThemData": thatsthem_data,
-            "overrideLastName": doc["overrideLastName"],
-        }
     return {
-        "name": name,
+        "name": doc.get("originalName", name),
         "phoneNumbers": phone_numbers,
         "thatsThemData": thatsthem_data,
+        "overrideLastName": doc.get("overrideLastName")
     }
 
-def get_assessor_data(territory_id):
-    """ load assessor data for territory """
-    docs = get_ungathered_address_for(territory_id)
-    for doc in docs:
-        get_assessor_data_for_doc(doc)
 
 def get_assessor_data_for_doc(doc, override_address=None, tries=1):
     """ single assessor lookup """
@@ -162,76 +143,32 @@ def get_assessor_data_for_doc(doc, override_address=None, tries=1):
             if input("Assessor couldn't find address, change address? (y/n)") == "y":
                 print("old address: {}".format(doc["address"]))
                 new_address = input("new address: ").strip()
-                get_assessor_data_for_doc(doc, new_address, tries+1)
-            else:
-                print("ERROR ==> {}".format(e))
+                return get_assessor_data_for_doc(doc, new_address, tries+1)
+            print("ERROR ==> {}".format(e))
         else:
             print("Assessor couldn't find {}".format(gather_address))
             print("So I'm going to try to get a new address from Google based on this house's GPS.")
             new_address = find_location_by_bad_address(doc["address"].split(",")[0])
-            get_assessor_data_for_doc(doc, new_address, tries+1)
+            return get_assessor_data_for_doc(doc, new_address, tries+1)
     except Exception as exc:
         print("#### DEBUG ASSESSOR EXCEPTION ####\n{}\n".format(exc))
 
-def get_thatsthem_data(doc, override_address=None):
-    """ put together thatsthem data """
-    try:
-        gather_address = override_address or get_gather_address(doc["address"])
-        thatsthem_data = get_phone_numbers(gather_address)
-        add_phone_data(doc, compile_final_doc(doc, thatsthem_data))
-
-    except ThatsThemNoMatchException:
-        if not override_address:
-            verbose_address = get_verbose_address(doc["address"])
-            return get_thatsthem_data(doc, verbose_address)
-
-        print("\nThatsThem couldn't find a match for this address.")
-        print("Would you like to try to search a slightly different address?")
-        print("Official Address: {}".format(doc["address"]))
-        print("Address Searched for on ThatsThem: {}\n".format(get_gather_address(doc["address"])))
-        action = input("(n)ew address, (c)ontinue, or (q)uit: ")
-        print("")
-        if action == "n":
-            new_addr = input("Enter address to use for ThatsThem: ")
-            return get_thatsthem_data(doc, new_addr)
-        if action == "q":
-            raise Exception("Goodbye!")
-
-        # give back empty result set
-        add_phone_data(doc, compile_final_doc(doc, []))
-
-    except ThatsThemNoDataException:
-        add_phone_data(doc, {
-            "thatsThemData": thatsthem_data,
-            "phoneNumbers": [],
-            "name": "Current Resident",
-            "skip_no_match": True,
-            })
-    return None
-
-
-def finalize_pending_thatsthem_matches(territory_id):
-    """ get all docs with thatsthem data and make sure it's got the best data """
-    for doc in get_docs_without_phone_num_but_ttd(territory_id):
-        add_phone_data(doc, compile_final_doc(doc, doc["thatsThemData"]))
-
-def fetch_all_missing_thatsthem_data(territory_id):
-    """ get fresh data from thatsthem for all docs in territory """
-    for doc in get_addresses_without_thatsthem_data(territory_id):
-        if "ownerLivesThere" in doc:
-            get_thatsthem_data(doc)
-        else:
-            print(">>> No Assessor data found for {}".format(doc["address"]))
-            print("Do you want to try getting Assessor data again then retry ThatsThem?")
-            if input("y/n: ") == "y":
-                assessor_data = get_assessor_data_for_doc(doc)
-                get_thatsthem_data(doc.update(assessor_data), doc["address"])
-
 
 if __name__ == "__main__":
-    if len(sys.argv) > 1:
-        TERRITORY_ID = sys.argv[1]
-        get_assessor_data(TERRITORY_ID)
-        finalize_pending_thatsthem_matches(TERRITORY_ID)
-        fetch_all_missing_thatsthem_data(TERRITORY_ID)
+    for location in get_all_docs():
+        print("## {}".format(location.get("_id")))
+
+        owner = get_assessor_data_for_doc(location)
+        continue
+
+        location.update({
+            "ownerName": owner["owner_name"],
+            "ownerLivesThere": owner["lives_there"],
+            "assessorAccountNumber": owner.get("account_number", None),
+        })
+        for key in ["skip_no_match", "overrideLastName", "phoneNumbers"]:
+            location.pop(key, None)
+        phone_updates = compile_final_doc(location, location["thatsThemData"])
+        if phone_updates:
+            add_phone_data(location, phone_updates)
     print("<> <> done <> <>")

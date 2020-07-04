@@ -6,6 +6,8 @@ import sys
 from dotenv import load_dotenv
 from pymongo import MongoClient
 
+from addresses import get_street
+
 DOT_ENV = join(dirname(dirname(__file__)), '.env')
 load_dotenv(DOT_ENV)
 
@@ -22,27 +24,18 @@ def add_address(territory_id, doc):
     """ add address to collection it ain't already there """
     doc.update({"territoryId": territory_id})
     if not ADDR.find_one(doc):
-        addr_pieces = usaddress.tag(doc["address"])[0]
-        doc["street"] = " ".join((
-            addr_pieces["StreetNamePreDirectional"],
-            addr_pieces["StreetName"],
-            addr_pieces["StreetNamePostType"]
-        ))
+        doc["street"] = get_street(doc["address"])
         ADDR.insert(doc)
 
 def change_address_and_add_owner_data(doc, address, owner_data):
     """ updates wrong address and adds assessor results """
-    addr_pieces = usaddress.tag(address)[0]
     updates = {
+        "assessorAccountNumber": owner_data.get("account_number", None),
         "lastUpdate": datetime.now(),
         "ownerName": owner_data["owner_name"],
         "ownerLivesThere": owner_data["lives_there"],
         "address": address,
-        "street": " ".join((
-            addr_pieces["StreetNamePreDirectional"],
-            addr_pieces["StreetName"],
-            addr_pieces["StreetNamePostType"]
-        ))
+        "street": get_street(address),
     }
     ADDR.update_one(doc, {"$set": updates})
 
@@ -71,6 +64,7 @@ def add_owner_data(doc, owner_data):
     """ patch in owner_data """
     ADDR.update_one(doc, {
         "$set": {
+            "assessorAccountNumber": owner_data.get("account_number", None),
             "lastUpdate": datetime.now(),
             "ownerName": owner_data["owner_name"],
             "ownerLivesThere": owner_data["lives_there"]
@@ -87,3 +81,10 @@ def add_phone_data(doc, updates):
 def get_all_docs_for(territory_id):
     """ get all docs for a given territory """
     return ADDR.find({"territoryId": territory_id})
+
+def get_all_docs():
+    """ get every doc """
+    return ADDR.find({
+        "thatsThemData": None,
+        "assessorAccountNumber": None,
+    }, batch_size=10)

@@ -32,7 +32,7 @@ def get_address(lat_lng):
             }
         )
         try:
-            print(print_replacement_address(r.result().json()))
+            return print_replacement_address(r.result().json())
         except Exception as e:
             print("ERROR: {}".format(e), file=sys.stderr)
             print("latlng -----> {}".format(lat_lng), file=sys.stderr)
@@ -68,18 +68,19 @@ def find_location_by_bad_address(address):
     rows = data.shape[0]
     for row in range(rows):
         if address in data.at[row, "Address"]:
-            get_address(
+            return get_address(
                 ",".join([
                     str(data.at[row, "Latitude"]),
                     str(data.at[row, "Longitude"]),
                 ])
             )
-            return
+    return None
 
 if __name__ == "__main__":
     if len(sys.argv) == 3:
         lat, lng = sys.argv[1:]
-        get_address(",".join([lat,lng]))
+        print(get_address(",".join([lat,lng])))
     else:
         for line in sys.stdin:
-            find_location_by_bad_address(line.strip())
+            good_address = find_location_by_bad_address(line.strip())
+            print(good_address)
