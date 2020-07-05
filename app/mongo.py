@@ -88,3 +88,10 @@ def get_all_docs():
         "thatsThemData": None,
         "assessorAccountNumber": None,
     }, batch_size=10)
+
+def find_bad_address():
+    """ temp method for broken addresses """
+    return ADDR.find({
+        "territoryId": "25A",
+        "street": "101st Pl",
+    })

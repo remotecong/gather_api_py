@@ -77,13 +77,12 @@ def compile_final_doc(doc, thatsthem_data, ignore_no_data=False):
                 "?account={}&go=1".format(assessor_acct_num)
             print(url)
         print("### I thought the last name was {}".format(first_piece_of_name))
-        print("### (technically I thought it was {})".format(last_name))
         print("### because the full name is {}\n".format(name))
         for thatsthem in thatsthem_data:
             print("* {}".format(thatsthem["name"]))
         print("\n### but I can't find a match in ThatsThem so do you want to")
-        print("(f)ix name, (m)ove on, (c)onfirm no match, or (q)uit?")
-        action = input("f/m/c/q: ")
+        print("(f)ix, (m)ove on temporarily, (r)enter lives there, (c)onfirm no match, or (q)uit?")
+        action = input("f/m/c/r/q: ")
         if action == "q":
             raise Exception("Goodbye!")
         if action == "f":
@@ -95,6 +94,11 @@ def compile_final_doc(doc, thatsthem_data, ignore_no_data=False):
                 "originalName": name
             }
             return compile_final_doc(shallow_doc, thatsthem_data)
+        if action == "r":
+            doc["ownerLivesThere"] = False
+            result_data = compile_final_doc(doc, thatsthem_data)
+            result_data["ownerLivesThere"] = False
+            return result_data
         return {
             "name": name,
             "phoneNumbers": phone_numbers,
@@ -121,6 +125,13 @@ def get_assessor_data(territory_id):
     for doc in docs:
         get_assessor_data_for_doc(doc)
 
+def print_assessor_permalink(doc):
+    """ prints link if account number is set """
+    acct = doc.get("assessorAccountNumber", None)
+    if acct:
+        print("https://www.assessor.tulsacounty.org/assessor-property.php" + \
+            "?account={}&go=1".format(acct))
+
 def get_assessor_data_for_doc(doc, override_address=None, tries=1):
     """ single assessor lookup """
     try:
@@ -137,9 +148,10 @@ def get_assessor_data_for_doc(doc, override_address=None, tries=1):
             assessor_data = get_owner_data(gather_address)
 
         if override_address:
-            print("\nAddress changed! Be sure to update TerritoryHelper")
-            print("Search for: {}".format(doc["address"]))
-            print("Change  to: {}".format(override_address))
+            print("")
+            print("[==] Address changed! Be sure to update TerritoryHelper")
+            print("[==] Search for: {}".format(doc["address"]))
+            print("[==] Change  to: {}".format(override_address))
             change_address_and_add_owner_data(doc, override_address, assessor_data)
         else:
             add_owner_data(doc, assessor_data)
@@ -172,18 +184,18 @@ def get_assessor_data_for_doc(doc, override_address=None, tries=1):
 def get_thatsthem_data(doc, override_address=None):
     """ put together thatsthem data """
     try:
-        gather_address = override_address or get_gather_address(doc["address"])
+        gather_address = override_address or get_verbose_address(doc["address"])
         thatsthem_data = get_phone_numbers(gather_address)
         add_phone_data(doc, compile_final_doc(doc, thatsthem_data))
 
     except ThatsThemNoMatchException:
         if not override_address:
-            verbose_address = get_verbose_address(doc["address"])
-            return get_thatsthem_data(doc, verbose_address)
+            return get_thatsthem_data(doc, get_gather_address(doc["address"]))
 
         print("\nThatsThem couldn't find a match for this address.")
         print("Would you like to try to search a slightly different address?")
         print("Official Address: {}".format(doc["address"]))
+        print_assessor_permalink(doc)
         print("Address Searched for on ThatsThem: {}\n".format(get_gather_address(doc["address"])))
         action = input("(n)ew address, (c)ontinue, or (q)uit: ")
         print("")

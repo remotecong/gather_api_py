@@ -62,9 +62,25 @@ def get_street(address):
 def get_gather_address(address):
     """ get gather address from address """
     addr_pieces = usaddress.tag(address)[0]
+
+    # debug a bit
+    pre_directional = addr_pieces.get("StreetNamePreDirectional", None)
+    if not pre_directional:
+        print()
+        print("No direction was found before the street name.")
+        print("Please provide a cardinal direction for:")
+        print("{} [HERE] {} {} {}".format(
+            addr_pieces["AddressNumber"],
+            addr_pieces["StreetName"],
+            addr_pieces["StreetNamePostType"],
+            addr_pieces.get("StreetNamePostDirectional", "")
+        ))
+        pre_directional = input("N/S/E/W: ")
+        print("\n!!! Make sure to add the Direction to the address in TerritoryHelper")
+        print("!!! {}".format(address))
     return "{} {} {} {}, {}, {}".format(
         addr_pieces["AddressNumber"],
-        addr_pieces["StreetNamePreDirectional"],
+        pre_directional,
         addr_pieces["StreetName"],
         addr_pieces["StreetNamePostType"],
         addr_pieces["PlaceName"],
