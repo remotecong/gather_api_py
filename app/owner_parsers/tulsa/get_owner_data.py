@@ -24,10 +24,13 @@ def get_owner_data(html):
     doc = soup.select("#general td")
     for elem in doc:
         if elem.string == "Owner mailing address":
-            mailing_address = ", ".join([
-                elem.next_sibling.contents[0],
-                elem.next_sibling.contents[2]
-            ]).strip()
+            try:
+                mailing_address = ", ".join([
+                    elem.next_sibling.contents[0],
+                    elem.next_sibling.contents[2]
+                ]).strip()
+            except:
+                mailing_address = elem.next_sibling.get_text()
         elif elem.string == "Owner name":
             owner_name = elem.next_sibling.string.strip()
 

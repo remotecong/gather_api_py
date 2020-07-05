@@ -1,6 +1,7 @@
 """ actually does the lookups """
 import re
 import sys
+
 from mongo import (
     get_ungathered_address_for,
     add_owner_data,
@@ -89,6 +90,7 @@ def compile_final_doc(doc, thatsthem_data, ignore_no_data=False):
             shallow_doc = {
                 "_id": doc["_id"],
                 "ownerLivesThere": True,
+                "ownerName": doc["ownerName"],
                 "overrideLastName": input("New Last Name: "),
                 "originalName": name
             }
@@ -123,13 +125,14 @@ def get_assessor_data_for_doc(doc, override_address=None, tries=1):
     """ single assessor lookup """
     try:
         acct_num = doc.get("assessorAccountNumber", None)
+        gather_address = get_gather_address(override_address or doc["address"])
+
         if acct_num:
             url = "https://www.assessor.tulsacounty.org/assessor-property.php" + \
                 "?account={}&go=1".format(acct_num)
             print("\nAssessor Lookup with Permalink: {} --- ".format(url))
             assessor_data = fetch_owner_data_from_permalink(url)
         else:
-            gather_address = get_gather_address(override_address or doc["address"])
             print("\nAssessor Lookup: {} --- ".format(gather_address))
             assessor_data = get_owner_data(gather_address)
 

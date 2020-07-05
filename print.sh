@@ -1,5 +1,8 @@
 #!/bin/bash
-TERR=$1
-python app/print_territory.py $1 > ~/Desktop/$1.txt
-open ~/Desktop/$1.txt
+if [ -z "$TERR" ];
+then
+  export TERR=$1
+fi
+python app/print_territory.py $TERR > ~/Desktop/$TERR.txt
+open ~/Desktop/$TERR.txt || xed ~/Desktop/$TERR.txt
 
