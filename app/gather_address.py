@@ -179,7 +179,7 @@ def get_assessor_data_for_doc(doc, override_address=None, tries=1):
             new_address = find_location_by_bad_address(doc["address"].split(",")[0])
             get_assessor_data_for_doc(doc, new_address, tries+1)
     except Exception as exc:
-        print("#### DEBUG ASSESSOR EXCEPTION ####\n{}\n".format(exc))
+        print("#### DEBUG ASSESSOR EXCEPTION ####\n{}\n{}\n".format(doc,exc))
 
 def get_thatsthem_data(doc, override_address=None):
     """ put together thatsthem data """

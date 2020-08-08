@@ -7,6 +7,7 @@ import usaddress
 DIRECTIONS = {
     "N": "North",
     "S": "South",
+    "SW": "South", # TODO: investigate how to better handle this case E 115th
     "E": "East",
     "W": "West",
 }
