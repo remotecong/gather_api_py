@@ -62,18 +62,21 @@ def print_replacement_address(geocode_result):
         return "{} {}, {}, {} {}, {}".format(number, street, city, state, postal_code, country)
     return None
 
-def find_location_by_bad_address(address):
-    """ reverse spreadsheet search for bad address """
+def find_coords_by_bad_address(address):
+    """ reverse spreadsheet search for bad addresses and get latlng """
     data = pd.read_excel("sample.xlsx")
     rows = data.shape[0]
     for row in range(rows):
         if address in data.at[row, "Address"]:
-            return get_address(
-                ",".join([
-                    str(data.at[row, "Latitude"]),
-                    str(data.at[row, "Longitude"]),
-                ])
-            )
+            return [data.at[row, "Latitude"], data.at[row, "Longitude"]]
+    return None
+
+
+def find_location_by_bad_address(address):
+    """ reverse spreadsheet search for bad address """
+    coords = find_coords_by_bad_address(address)
+    if coords:
+        return get_address(",".join([str(pos) for pos in coords]))
     return None
 
 if __name__ == "__main__":

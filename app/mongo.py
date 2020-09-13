@@ -57,8 +57,16 @@ def get_docs_without_phone_num_but_ttd(territory_id):
             {"phoneNumbers": {"$size": 0}},
             {"skip_no_match": {"$exists": False}},
             {"overrideLastName": {"$exists": False}},
+            {"thatsThemData": {"$exists": True, "$ne": []}},
         ]
     })
+
+def get_docs_without_coords():
+    """ TEMP function to fix up missing coords """
+    return ADDR.find({
+        "coords": None,
+    }, batch_size=10)
+
 
 def add_owner_data(doc, owner_data):
     """ patch in owner_data """
@@ -70,6 +78,15 @@ def add_owner_data(doc, owner_data):
             "ownerLivesThere": owner_data["lives_there"]
         }
         })
+
+def add_assessor_id(doc, assessor_id):
+    """ patch in assessor ID """
+    ADDR.update_one(doc, {
+        "$set": {
+            "assessorAccountNumber": assessor_id,
+            "lastUpdate": datetime.now(),
+        },
+    })
 
 def add_phone_data(doc, updates):
     """ patch in owner_data """

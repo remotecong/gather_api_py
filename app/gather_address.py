@@ -26,7 +26,7 @@ def phone_number_sort(rec):
         return 0
     return 1
 
-def compile_final_doc(doc, thatsthem_data, ignore_no_data=False):
+def compile_final_doc(doc, thatsthem_data, ignore_no_data=False, autopilot=False):
     """ connects existing doc with address to gather data """
     # name for record
     name = None
@@ -70,7 +70,7 @@ def compile_final_doc(doc, thatsthem_data, ignore_no_data=False):
         if lname_re.search(thatsthem["name"]):
             thats_them_match_count += 1
             phone_numbers = phone_numbers + thatsthem["numbers"]
-    if thats_them_match_count == 0 and ("skip_no_match" not in doc or not doc["skip_no_match"]):
+    if not autopilot and thats_them_match_count == 0 and ("skip_no_match" not in doc or not doc["skip_no_match"]):
         assessor_acct_num = doc.get("assessorAccountNumber", None)
         if assessor_acct_num:
             url = "https://www.assessor.tulsacounty.org/assessor-property.php" + \
@@ -119,11 +119,11 @@ def compile_final_doc(doc, thatsthem_data, ignore_no_data=False):
         "thatsThemData": thatsthem_data,
     }
 
-def get_assessor_data(territory_id):
+def get_assessor_data(territory_id, autopilot=False):
     """ load assessor data for territory """
     docs = get_ungathered_address_for(territory_id)
     for doc in docs:
-        get_assessor_data_for_doc(doc)
+        get_assessor_data_for_doc(doc, None, 1, autopilot)
 
 def print_assessor_permalink(doc):
     """ prints link if account number is set """
@@ -132,7 +132,7 @@ def print_assessor_permalink(doc):
         print("https://www.assessor.tulsacounty.org/assessor-property.php" + \
             "?account={}&go=1".format(acct))
 
-def get_assessor_data_for_doc(doc, override_address=None, tries=1):
+def get_assessor_data_for_doc(doc, override_address=None, tries=1, autopilot=False):
     """ single assessor lookup """
     try:
         acct_num = doc.get("assessorAccountNumber", None)
@@ -154,59 +154,75 @@ def get_assessor_data_for_doc(doc, override_address=None, tries=1):
             print("[==] Change  to: {}".format(override_address))
             change_address_and_add_owner_data(doc, override_address, assessor_data)
         else:
+            if acct_num and tries > 1 and not override_address:
+                print("DEBUG DATA\n{}\n{}\n".format(doc["_id"], assessor_data))
             add_owner_data(doc, assessor_data)
         return assessor_data
     except TypeError as e:
-        if tries > 2:
+        # if autopilot, just move on to the next one.
+        if not autopilot and tries > 2:
             print("\nThis address cannot be found!\n{}".format(doc["address"]))
-            print(doc["address"])
             print(gather_address)
-            print("\nWould you like to:\n(c)ontinue or (q)uit?")
-            if input("c/q: ") == "q":
+            print("\nWould you like to:\n(c)ontinue to next house, (s)et assessor ID, or (q)uit?")
+            next_step = input("c/s/q: ")
+            if next_step == "q":
                 raise Exception("Goodbye!")
-        if tries > 1:
+            if next_step == "s":
+                assessor_id = input("Paste in assessor ID: ")
+                doc["assessorAccountNumber"] = assessor_id
+                return get_assessor_data_for_doc(doc, None, tries+1)
+        if not autopilot and tries > 1:
             print("No match on Assessor for -- {}".format(doc["address"]))
             print("(Searched for: {})".format(gather_address))
-            if input("Assessor couldn't find address, change address? (y/n)") == "y":
+            print("Assessor couldn't find address\n(c)hange address, (s)et assessor id, (n)ext")
+            customize_address = input("c/s/n: ")
+            if customize_address == "c":
                 print("old address: {}".format(doc["address"]))
                 new_address = input("new address: ").strip()
                 get_assessor_data_for_doc(doc, new_address, tries+1)
-            else:
+            elif customize_address.strip() == "s":
+                assessor_id = input("Paste in assessor ID: ")
+                doc["assessorAccountNumber"] = assessor_id
+                get_assessor_data_for_doc(doc, None, tries+1)
+            elif customize_address.strip() != "n":
                 print("ERROR ==> {}".format(e))
-        else:
+        elif tries == 1:
             print("Assessor couldn't find {}".format(gather_address))
             print("So I'm going to try to get a new address from Google based on this house's GPS.")
             new_address = find_location_by_bad_address(doc["address"].split(",")[0])
-            get_assessor_data_for_doc(doc, new_address, tries+1)
+            get_assessor_data_for_doc(doc, new_address, tries+1, autopilot)
+        else:
+            print("Assessor couldn't find {}\nMoving on now...".format(gather_address))
     except Exception as exc:
         print("#### DEBUG ASSESSOR EXCEPTION ####\n{}\n{}\n".format(doc,exc))
 
-def get_thatsthem_data(doc, override_address=None):
+def get_thatsthem_data(doc, override_address=None, autopilot=False):
     """ put together thatsthem data """
     try:
         gather_address = override_address or get_verbose_address(doc["address"])
         thatsthem_data = get_phone_numbers(gather_address)
-        add_phone_data(doc, compile_final_doc(doc, thatsthem_data))
+        add_phone_data(doc, compile_final_doc(doc, thatsthem_data, False, autopilot))
 
     except ThatsThemNoMatchException:
         if not override_address:
-            return get_thatsthem_data(doc, get_gather_address(doc["address"]))
+            return get_thatsthem_data(doc, get_gather_address(doc["address"]), autopilot)
 
-        print("\nThatsThem couldn't find a match for this address.")
-        print("Would you like to try to search a slightly different address?")
-        print("Official Address: {}".format(doc["address"]))
-        print_assessor_permalink(doc)
-        print("Address Searched for on ThatsThem: {}\n".format(get_gather_address(doc["address"])))
-        action = input("(n)ew address, (c)ontinue, or (q)uit: ")
-        print("")
-        if action == "n":
-            new_addr = input("Enter address to use for ThatsThem: ")
-            return get_thatsthem_data(doc, new_addr)
-        if action == "q":
-            raise Exception("Goodbye!")
+        if not autopilot:
+            print("\nThatsThem couldn't find a match for this address.")
+            print("Would you like to try to search a slightly different address?")
+            print("Official Address: {}".format(doc["address"]))
+            print_assessor_permalink(doc)
+            print("Address Searched for on ThatsThem: {}\n".format(get_gather_address(doc["address"])))
+            action = input("(n)ew address, (c)ontinue, or (q)uit: ")
+            print("")
+            if action == "n":
+                new_addr = input("Enter address to use for ThatsThem: ")
+                return get_thatsthem_data(doc, new_addr, autopilot)
+            if action == "q":
+                raise Exception("Goodbye!")
 
-        # give back empty result set
-        add_phone_data(doc, compile_final_doc(doc, [], ignore_no_data=True))
+            # give back empty result set
+        add_phone_data(doc, compile_final_doc(doc, [], True, autopilot))
 
     except ThatsThemNoDataException:
         add_phone_data(doc, {
@@ -223,23 +239,27 @@ def finalize_pending_thatsthem_matches(territory_id):
     for doc in get_docs_without_phone_num_but_ttd(territory_id):
         add_phone_data(doc, compile_final_doc(doc, doc["thatsThemData"]))
 
-def fetch_all_missing_thatsthem_data(territory_id):
+def fetch_all_missing_thatsthem_data(territory_id, autopilot):
     """ get fresh data from thatsthem for all docs in territory """
     for doc in get_addresses_without_thatsthem_data(territory_id):
         if "ownerLivesThere" in doc:
-            get_thatsthem_data(doc)
+            get_thatsthem_data(doc, None, autopilot)
         else:
             print(">>> No Assessor data found for {}".format(doc["address"]))
             print("Do you want to try getting Assessor data again then retry ThatsThem?")
             if input("y/n: ") == "y":
-                assessor_data = get_assessor_data_for_doc(doc)
-                get_thatsthem_data(doc.update(assessor_data), doc["address"])
+                assessor_data = get_assessor_data_for_doc(doc, None, 1, autopilot)
+                get_thatsthem_data(doc.update(assessor_data), doc["address"], autopilot)
 
 
 if __name__ == "__main__":
     if len(sys.argv) > 1:
         TERRITORY_ID = sys.argv[1]
-        get_assessor_data(TERRITORY_ID)
-        finalize_pending_thatsthem_matches(TERRITORY_ID)
-        fetch_all_missing_thatsthem_data(TERRITORY_ID)
+        AUTOPILOT = len(sys.argv) > 2 and \
+            sys.argv[2].strip() in ["--autopilot", "autopilot", "a", "-a"]
+        print("<> <> pulling up territory {} {} <> <>".format(TERRITORY_ID, "(with autopilot)" if AUTOPILOT else ""))
+        get_assessor_data(TERRITORY_ID, AUTOPILOT)
+        if not AUTOPILOT:
+            finalize_pending_thatsthem_matches(TERRITORY_ID)
+        fetch_all_missing_thatsthem_data(TERRITORY_ID, AUTOPILOT)
     print("<> <> done <> <>")
