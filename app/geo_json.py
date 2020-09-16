@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 import sys
 import json
 
@@ -5,7 +6,7 @@ from shapely.geometry import Point
 from shapely.geometry.polygon import Polygon
 
 from geocode import find_coords_by_bad_address
-from mongo import add_phone_data, get_docs_without_coords
+from mongo import add_phone_data, delete_doc, get_docs_without_coords
 
 def geo_jsons():
     """ paths """
@@ -63,14 +64,12 @@ def find_acct_num(coords):
     return None
 
 if __name__ == "__main__":
+    lines = []
     for doc in get_docs_without_coords():
-        coords = find_coords_by_bad_address(doc["address"])
-        print("searching for == {} ==> {}".format(doc["address"], coords))
-        if coords:
-            acct_num = find_acct_num(coords)
-            add_phone_data(doc, {
-                "coords": coords,
-                "assessorAccountNumber": acct_num,
-            })
-        else:
-            print("==========\nCouldn't find coordinates for\n{}\n{}".format(doc["address"], doc["_id"]))
+        if not find_coords_by_bad_address(doc["address"]):
+            if "assessorAccountNumber" not in doc and "ownerName" not in doc and "phoneNumbers" not in doc:
+                delete_doc(doc)
+            else:
+                lines.append("{} `{}` `{}` {}".format(doc["territoryId"], doc["_id"], doc["address"], doc.get("assessorAccountNumber", "??")))
+    for l in sorted(lines):
+        print(l)

@@ -61,6 +61,12 @@ def get_docs_without_phone_num_but_ttd(territory_id):
         ]
     })
 
+
+def delete_doc(doc):
+    """ erase a doc permanently """
+    ADDR.delete_one({"_id": doc["_id"]})
+
+
 def get_docs_without_coords():
     """ TEMP function to fix up missing coords """
     return ADDR.find({

@@ -15,6 +15,7 @@ from geocode import find_location_by_bad_address
 from owner_info import get_owner_data
 from owner_parsers.tulsa import fetch_owner_data_from_permalink
 from thatsthem import get_phone_numbers, ThatsThemNoMatchException
+from geo_json import find_acct_num
 
 
 class ThatsThemNoDataException(Exception):
@@ -136,6 +137,9 @@ def get_assessor_data_for_doc(doc, override_address=None, tries=1, autopilot=Fal
     """ single assessor lookup """
     try:
         acct_num = doc.get("assessorAccountNumber", None)
+        # try geojson for assessor first!
+        if not acct_num and tries == 1 and "coords" in doc:
+            acct_num = find_acct_num(doc["coords"])
         gather_address = get_gather_address(override_address or doc["address"])
 
         if acct_num:
@@ -154,8 +158,6 @@ def get_assessor_data_for_doc(doc, override_address=None, tries=1, autopilot=Fal
             print("[==] Change  to: {}".format(override_address))
             change_address_and_add_owner_data(doc, override_address, assessor_data)
         else:
-            if acct_num and tries > 1 and not override_address:
-                print("DEBUG DATA\n{}\n{}\n".format(doc["_id"], assessor_data))
             add_owner_data(doc, assessor_data)
         return assessor_data
     except TypeError as e:
