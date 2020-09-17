@@ -58,6 +58,7 @@ def get_owner_data(html):
         "owner_name": owner_name,
         "lives_there": lives_there,
         "last_name": get_last_name(owner_name),
+        "assessor_house_number": house_number,
     }
 
 if __name__ == "__main__":

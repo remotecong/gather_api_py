@@ -67,6 +67,13 @@ def delete_doc(doc):
     ADDR.delete_one({"_id": doc["_id"]})
 
 
+def find_docs_like(example):
+    """ generic search method """
+    if example:
+        return ADDR.find(example, batch_size=10)
+    return []
+
+
 def get_docs_without_coords():
     """ TEMP function to fix up missing coords """
     return ADDR.find({
