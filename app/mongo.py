@@ -83,14 +83,16 @@ def get_docs_without_coords():
 
 def add_owner_data(doc, owner_data):
     """ patch in owner_data """
-    ADDR.update_one(doc, {
-        "$set": {
-            "assessorAccountNumber": owner_data.get("account_number", None),
-            "lastUpdate": datetime.now(),
-            "ownerName": owner_data["owner_name"],
-            "ownerLivesThere": owner_data["lives_there"]
-        }
-        })
+    updates = {
+        "assessorAccountNumber": owner_data.get("account_number", None),
+        "lastUpdate": datetime.now(),
+        "ownerName": owner_data["owner_name"],
+        "ownerLivesThere": owner_data["lives_there"]
+    }
+    house_num = owner_data.get("assessor_house_number", None)
+    if house_num and "address" in doc and doc["address"].find(house_num) != 0:
+        updates["houseNumConflict"] = house_num
+    ADDR.update_one(doc, {"$set": updates})
 
 def add_assessor_id(doc, assessor_id):
     """ patch in assessor ID """
