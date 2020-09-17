@@ -66,10 +66,17 @@ def find_acct_num(coords):
 if __name__ == "__main__":
     lines = []
     for doc in get_docs_without_coords():
-        if not find_coords_by_bad_address(doc["address"]):
+        coords = find_coords_by_bad_address(doc["address"])
+        print("searching for == {} ==> {}".format(doc["address"], coords))
+        if not coords:
             if "assessorAccountNumber" not in doc and "ownerName" not in doc and "phoneNumbers" not in doc:
                 delete_doc(doc)
             else:
                 lines.append("{} `{}` `{}` {}".format(doc["territoryId"], doc["_id"], doc["address"], doc.get("assessorAccountNumber", "??")))
+        else:
+            add_phone_data(doc, {
+                "coords": coords,
+                "assessorAccountNumber": find_acct_num(coords),
+            })
     for l in sorted(lines):
         print(l)

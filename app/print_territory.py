@@ -8,12 +8,15 @@ def key_residence(res):
     """ mapper for sorting residences """
     return res["address"]
 
-def ppp(name, address, phones, notes=None):
+def ppp(name, address, phone, notes):
     """ handles printing records """
-    if notes:
-        print("{}\t{}\t{}\t{}".format(name, address, phones, notes))
+    if phone == "No Number Found":
+        call_note = "-"
+    elif phone == "Do Not Call":
+        call_note = "DNC"
     else:
-        print("{}\t{}\t{}".format(name, address, phones))
+        call_note = ""
+    print("{}\t{}\t{}\t{}\t{}\t{}".format(name, address, phone, call_note, call_note, notes))
 
 def get_territory_docs(territory_id):
     """ collects all docs for territory """
@@ -62,13 +65,16 @@ def print_territory(territory_id):
             uniq_phones.sort(key=phone_number_sort)
             phones = uniq_phones[0:2]
 
-            if len(phones) > 1:
-                phones = "\"{}\"".format("\n".join(phones))
-            elif len(phones) > 0:
-                phones = "".join(phones)
-            else:
-                phones = "No Number Found"
-            ppp(name, printable_addr, phones)
+            if len(phones) == 0:
+                phones.append("No Number Found")
+            for i, p in enumerate(phones):
+                ppp(
+                    name if i == 0 else "▲",
+                    printable_addr if i == 0 else "▲",
+                    p,
+                    "" if i == 0 else "⃠"
+                )
+            #ppp(name, printable_addr, phones)
 
 
 if __name__ == "__main__":

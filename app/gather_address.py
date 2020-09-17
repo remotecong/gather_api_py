@@ -201,7 +201,10 @@ def get_assessor_data_for_doc(doc, override_address=None, tries=1, autopilot=Fal
 def get_thatsthem_data(doc, override_address=None, autopilot=False):
     """ put together thatsthem data """
     try:
-        gather_address = override_address or get_verbose_address(doc["address"])
+        if re.search(r" St\s.*,", doc["address"]):
+            gather_address = override_address or get_gather_address(doc["address"])
+        else:
+            gather_address = override_address or get_verbose_address(doc["address"])
         thatsthem_data = get_phone_numbers(gather_address)
         add_phone_data(doc, compile_final_doc(doc, thatsthem_data, False, autopilot))
 
