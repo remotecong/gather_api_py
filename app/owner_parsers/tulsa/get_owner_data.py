@@ -43,12 +43,18 @@ def get_owner_data(html):
         if elem.string == "Account #":
             acct_num = elem.next_sibling.contents[0]
         if elem.string == "Situs address":
-            house_number = elem.next_sibling.contents[1].split()[0]
+            try:
+                house_number = elem.next_sibling.contents[1].split()[0]
+            except IndexError:
+                pass
             break
 
     # does owner live there?
-    lives_there = (house_number and house_number in mailing_address) or \
-            (homestead and is_po_box(mailing_address))
+    if not house_number and mailing_address:
+        house_number = mailing_address.split()[0]
+    lives_there = house_number and ( \
+            (house_number and house_number in mailing_address) or \
+            (homestead and is_po_box(mailing_address)))
 
     # return results
     return {

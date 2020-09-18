@@ -20,12 +20,24 @@ if not DB:
 
 ADDR = DB.address
 
+class CoordsMissingException(Exception):
+    """ no coords? """
+
 def add_address(territory_id, doc):
     """ add address to collection it ain't already there """
-    doc.update({"territoryId": territory_id})
-    if not ADDR.find_one(doc):
-        doc["street"] = get_street(doc["address"])
-        ADDR.insert(doc)
+    if "coords" in doc:
+        if not ADDR.find_one({"coords": doc["coords"]}):
+            doc.update({"territoryId": territory_id})
+            doc["street"] = get_street(doc["address"])
+            ADDR.insert(doc)
+    else:
+        raise CoordsMissingException
+
+
+def doc_already_exists(doc):
+    """ check if doc exists """
+    return ADDR.find_one(doc)
+
 
 def change_address_and_add_owner_data(doc, address, owner_data):
     """ updates wrong address and adds assessor results """
