@@ -1,18 +1,14 @@
 """ territory helper locations converter """
 import sys
 import pandas as pd
+
 from mongo import add_address, doc_already_exists
 from geo_json import find_acct_num
 
-DATA = pd.read_excel("sample.xlsx")
 
-TARGET_TERR = sys.argv[1]
-
-ROW_COUNT = DATA.shape[0]
-
-def get_new_docs(all_docs):
+def get_new_docs(t_id):
     """ filter out and give back docs to be added """
-    for doc in all_docs:
+    for doc in get_rows(t_id):
         coords = doc.get("coords")
         if not doc_already_exists({"coords": coords}):
             acct_num = find_acct_num(coords)
@@ -21,20 +17,29 @@ def get_new_docs(all_docs):
             yield doc
 
 
-if ROW_COUNT > 0:
-    print("Loading Territory {}\n{} total Locations across all territories.".format(TARGET_TERR, ROW_COUNT))
-    to_be_added = []
-    for r in range(ROW_COUNT):
-        terr = DATA.at[r, "Territory number"]
-        if terr == TARGET_TERR:
-            to_be_added.append({
+def get_rows(t_id):
+    """ loads up spreadsheet and yields rows """
+    DATA = pd.read_excel("sample.xlsx")
+    for r in range(DATA.shape[0]):
+        if DATA.at[r, "Territory number"] == t_id:
+            yield {
                 "address": DATA.at[r, "Address"],
                 "doNotCall": DATA.at[r, "Status"] == "Do not call",
                 "coords": [DATA.at[r, "Latitude"], DATA.at[r, "Longitude"]],
-            })
-    print("Found {} locations from spreadsheet for {}. Going to add them to database (if needed.)".format(len(to_be_added), TARGET_TERR))
+                "territoryId": t_id,
+            }
+
+
+def load_territory(t_id):
+    """ fetch all locations for a territory """
     added_count = 0
-    for doc in get_new_docs(to_be_added):
-        add_address(terr, doc)
+    for doc in get_new_docs(t_id):
+        add_address(t_id, doc)
         added_count = added_count + 1
-    print("Added {} locations".format(added_count))
+    return added_count
+
+
+if __name__ == "__main__":
+    TARGET_TERR = sys.argv[1]
+    print("Loading Territory {}".format(TARGET_TERR))
+    print("Added {} locations for {}.!".format(load_territory(TARGET_TERR), TARGET_TERR))

@@ -25,7 +25,9 @@ def phone_number_sort(rec):
     """ prep phone numbers for sorting tulsa numbers first """
     if rec["number"].startswith("918-"):
         return 0
+
     return 1
+
 
 def compile_final_doc(doc, thatsthem_data, ignore_no_data=False, autopilot=False):
     """ connects existing doc with address to gather data """
@@ -33,14 +35,17 @@ def compile_final_doc(doc, thatsthem_data, ignore_no_data=False, autopilot=False
     name = None
     # last name for matching
     last_name = None
+
     first_piece_of_name = None
     thats_them_match_count = 0
     has_override_name = "overrideLastName" in doc
+
     if has_override_name:
         # just use this value for all names
         name = doc["overrideLastName"]
         first_piece_of_name = name
         last_name = name
+
     elif doc["ownerLivesThere"]:
         name = doc["ownerName"]
         first_piece_of_name = name.split(",")[0].strip()
@@ -58,34 +63,43 @@ def compile_final_doc(doc, thatsthem_data, ignore_no_data=False, autopilot=False
         last_name = re.sub(r' ', ' ?', last_name)
         last_name = re.sub(r'\'', '\'?', last_name)
         last_name = re.sub(r'^MC([A-Z]+)', r'MC ?\1', last_name)
+
     elif len(thatsthem_data) > 0:
         name = thatsthem_data[0]["name"]
         last_name = name.split(" ")[-1]
+
     elif not ignore_no_data:
         raise ThatsThemNoDataException("no owner at {}".format(doc["address"]))
 
     # filter all thatsthem data for last_name
     lname_re = re.compile("{}( jn?r| sn?r| ii| iii)?$".format(last_name), re.IGNORECASE)
     phone_numbers = []
+
     for thatsthem in thatsthem_data:
         if lname_re.search(thatsthem["name"]):
             thats_them_match_count += 1
             phone_numbers = phone_numbers + thatsthem["numbers"]
+
     if not autopilot and thats_them_match_count == 0 and ("skip_no_match" not in doc or not doc["skip_no_match"]):
         assessor_acct_num = doc.get("assessorAccountNumber", None)
+
         if assessor_acct_num:
             url = "https://www.assessor.tulsacounty.org/assessor-property.php" + \
                 "?account={}&go=1".format(assessor_acct_num)
             print(url)
         print("### I thought the last name was {}".format(first_piece_of_name))
         print("### because the full name is {}\n".format(name))
+
         for thatsthem in thatsthem_data:
             print("* {}".format(thatsthem["name"]))
+
         print("\n### but I can't find a match in ThatsThem so do you want to")
         print("(f)ix, (m)ove on temporarily, (r)enter lives there, (c)onfirm no match, or (q)uit?")
         action = input("f/m/c/r/q: ")
+
         if action == "q":
             raise Exception("Goodbye!")
+
         if action == "f":
             shallow_doc = {
                 "_id": doc["_id"],
@@ -95,18 +109,22 @@ def compile_final_doc(doc, thatsthem_data, ignore_no_data=False, autopilot=False
                 "originalName": name
             }
             return compile_final_doc(shallow_doc, thatsthem_data)
+
         if action == "r":
             doc["ownerLivesThere"] = False
             result_data = compile_final_doc(doc, thatsthem_data)
             result_data["ownerLivesThere"] = False
             return result_data
+
         return {
             "name": name,
             "phoneNumbers": phone_numbers,
             "thatsThemData": thatsthem_data,
             "skip_no_match": action.strip().lower() == "c"
         }
+
     phone_numbers.sort(key=phone_number_sort)
+
     if has_override_name:
         return {
             "name": doc["originalName"],
@@ -114,11 +132,13 @@ def compile_final_doc(doc, thatsthem_data, ignore_no_data=False, autopilot=False
             "thatsThemData": thatsthem_data,
             "overrideLastName": doc["overrideLastName"],
         }
+
     return {
         "name": name,
         "phoneNumbers": phone_numbers,
         "thatsThemData": thatsthem_data,
     }
+
 
 def get_assessor_data(territory_id, autopilot=False):
     """ load assessor data for territory """
@@ -126,12 +146,14 @@ def get_assessor_data(territory_id, autopilot=False):
     for doc in docs:
         get_assessor_data_for_doc(doc, None, 1, autopilot)
 
+
 def print_assessor_permalink(doc):
     """ prints link if account number is set """
     acct = doc.get("assessorAccountNumber", None)
     if acct:
         print("https://www.assessor.tulsacounty.org/assessor-property.php" + \
             "?account={}&go=1".format(acct))
+
 
 def get_assessor_data_for_doc(doc, override_address=None, tries=1, autopilot=False):
     """ single assessor lookup """
@@ -157,9 +179,12 @@ def get_assessor_data_for_doc(doc, override_address=None, tries=1, autopilot=Fal
             print("[==] Search for: {}".format(doc["address"]))
             print("[==] Change  to: {}".format(override_address))
             change_address_and_add_owner_data(doc, override_address, assessor_data)
+
         else:
             add_owner_data(doc, assessor_data)
+
         return assessor_data
+
     except TypeError as e:
         # if autopilot, just move on to the next one.
         if not autopilot and tries > 2:
@@ -167,36 +192,46 @@ def get_assessor_data_for_doc(doc, override_address=None, tries=1, autopilot=Fal
             print(gather_address)
             print("\nWould you like to:\n(c)ontinue to next house, (s)et assessor ID, or (q)uit?")
             next_step = input("c/s/q: ")
+
             if next_step == "q":
                 raise Exception("Goodbye!")
+
             if next_step == "s":
                 assessor_id = input("Paste in assessor ID: ")
                 doc["assessorAccountNumber"] = assessor_id
                 return get_assessor_data_for_doc(doc, None, tries+1)
+
         if not autopilot and tries > 1:
             print("No match on Assessor for -- {}".format(doc["address"]))
             print("(Searched for: {})".format(gather_address))
             print("Assessor couldn't find address\n(c)hange address, (s)et assessor id, (n)ext")
             customize_address = input("c/s/n: ")
+
             if customize_address == "c":
                 print("old address: {}".format(doc["address"]))
                 new_address = input("new address: ").strip()
                 get_assessor_data_for_doc(doc, new_address, tries+1)
+
             elif customize_address.strip() == "s":
                 assessor_id = input("Paste in assessor ID: ")
                 doc["assessorAccountNumber"] = assessor_id
                 get_assessor_data_for_doc(doc, None, tries+1)
+
             elif customize_address.strip() != "n":
                 print("ERROR ==> {}".format(e))
+
         elif tries == 1:
             print("Assessor couldn't find {}".format(gather_address))
             print("So I'm going to try to get a new address from Google based on this house's GPS.")
             new_address = find_location_by_bad_address(doc["address"].split(",")[0])
             get_assessor_data_for_doc(doc, new_address, tries+1, autopilot)
+
         else:
             print("Assessor couldn't find {}\nMoving on now...".format(gather_address))
+
     except Exception as exc:
-        print("#### DEBUG ASSESSOR EXCEPTION ####\n{}\n{}\n".format(doc,exc))
+        print("#### DEBUG ASSESSOR EXCEPTION ####\n{}\n{}\n".format(doc, exc))
+
 
 def get_thatsthem_data(doc, override_address=None, autopilot=False):
     """ put together thatsthem data """
@@ -220,9 +255,11 @@ def get_thatsthem_data(doc, override_address=None, autopilot=False):
             print("Address Searched for on ThatsThem: {}\n".format(get_gather_address(doc["address"])))
             action = input("(n)ew address, (c)ontinue, or (q)uit: ")
             print("")
+
             if action == "n":
                 new_addr = input("Enter address to use for ThatsThem: ")
                 return get_thatsthem_data(doc, new_addr, autopilot)
+
             if action == "q":
                 raise Exception("Goodbye!")
 
@@ -244,6 +281,7 @@ def finalize_pending_thatsthem_matches(territory_id):
     for doc in get_docs_without_phone_num_but_ttd(territory_id):
         add_phone_data(doc, compile_final_doc(doc, doc["thatsThemData"]))
 
+
 def fetch_all_missing_thatsthem_data(territory_id, autopilot):
     """ get fresh data from thatsthem for all docs in territory """
     for doc in get_addresses_without_thatsthem_data(territory_id):
@@ -257,14 +295,22 @@ def fetch_all_missing_thatsthem_data(territory_id, autopilot):
                 get_thatsthem_data(doc.update(assessor_data), doc["address"], autopilot)
 
 
+def pickup_territory_work(t_id, autopilot=False):
+    """ running gather from script or as module """
+    get_assessor_data(t_id, autopilot)
+    if not autopilot:
+        finalize_pending_thatsthem_matches(t_id)
+    fetch_all_missing_thatsthem_data(t_id, autopilot)
+
 if __name__ == "__main__":
     if len(sys.argv) > 1:
         TERRITORY_ID = sys.argv[1]
         AUTOPILOT = len(sys.argv) > 2 and \
             sys.argv[2].strip() in ["--autopilot", "autopilot", "a", "-a"]
         print("<> <> pulling up territory {} {} <> <>".format(TERRITORY_ID, "(with autopilot)" if AUTOPILOT else ""))
-        get_assessor_data(TERRITORY_ID, AUTOPILOT)
-        if not AUTOPILOT:
-            finalize_pending_thatsthem_matches(TERRITORY_ID)
-        fetch_all_missing_thatsthem_data(TERRITORY_ID, AUTOPILOT)
-    print("<> <> done <> <>")
+        pickup_territory_work(TERRITORY_ID, AUTOPILOT)
+        print("<> <> done <> <>")
+
+    else:
+        print("## ## no territory id entered! ## ##")
+        print("try again (e.g. python app/gather_address.py 25C1)")
