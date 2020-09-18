@@ -3,12 +3,12 @@ import re
 import sys
 
 from mongo import (
-    get_ungathered_address_for,
     add_owner_data,
+    add_phone_data,
     change_address_and_add_owner_data,
     get_addresses_without_thatsthem_data,
     get_docs_without_phone_num_but_ttd,
-    add_phone_data
+    get_ungathered_address_for,
 )
 from addresses import get_gather_address, get_verbose_address
 from geocode import find_location_by_bad_address
@@ -236,16 +236,24 @@ def get_assessor_data_for_doc(doc, override_address=None, tries=1, autopilot=Fal
 def get_thatsthem_data(doc, override_address=None, autopilot=False):
     """ put together thatsthem data """
     try:
-        if re.search(r" St\s.*,", doc["address"]):
-            gather_address = override_address or get_gather_address(doc["address"])
+        is_street = re.search(r"( St\s.*,| Street\s.*,)", doc["address"])
+        if override_address:
+            gather_address = override_address
+
+        elif is_street:
+            gather_address = get_gather_address(doc["address"])
+
         else:
-            gather_address = override_address or get_verbose_address(doc["address"])
+            gather_address = get_verbose_address(doc["address"])
+
         thatsthem_data = get_phone_numbers(gather_address)
         add_phone_data(doc, compile_final_doc(doc, thatsthem_data, False, autopilot))
 
     except ThatsThemNoMatchException:
         if not override_address:
-            return get_thatsthem_data(doc, get_gather_address(doc["address"]), autopilot)
+            override_address = get_verbose_address(doc["address"]) if is_street \
+                else get_gather_address(doc["address"])
+            return get_thatsthem_data(doc, override_address, autopilot)
 
         if not autopilot:
             print("\nThatsThem couldn't find a match for this address.")
