@@ -21,6 +21,9 @@ from geo_json import find_acct_num
 class ThatsThemNoDataException(Exception):
     """ custom error for thatsthem errors """
 
+class AddressHouseNumberConflictException(Exception):
+    """ custom error to pre-resolve address conflicts """
+
 def phone_number_sort(rec):
     """ prep phone numbers for sorting tulsa numbers first """
     if rec["number"].startswith("918-"):
@@ -106,20 +109,25 @@ def compile_final_doc(doc, thatsthem_data, ignore_no_data=False, autopilot=False
                 "ownerLivesThere": True,
                 "ownerName": doc["ownerName"],
                 "overrideLastName": input("New Last Name: "),
-                "originalName": name
+                "originalName": name,
+                "adjustedAddress": doc.get("adjustedAddress", None),
             }
             return compile_final_doc(shallow_doc, thatsthem_data)
 
         if action == "r":
             doc["ownerLivesThere"] = False
             result_data = compile_final_doc(doc, thatsthem_data)
-            result_data["ownerLivesThere"] = False
+            result_data.update({
+                "ownerLivesThere": False,
+                "adjustedAddress": doc.get("adjustedAddress", None),
+            })
             return result_data
 
         return {
             "name": name,
             "phoneNumbers": phone_numbers,
             "thatsThemData": thatsthem_data,
+            "adjustedAddress": doc.get("adjustedAddress", None),
             "skip_no_match": action.strip().lower() == "c"
         }
 
@@ -131,12 +139,14 @@ def compile_final_doc(doc, thatsthem_data, ignore_no_data=False, autopilot=False
             "phoneNumbers": phone_numbers,
             "thatsThemData": thatsthem_data,
             "overrideLastName": doc["overrideLastName"],
+            "adjustedAddress": doc.get("adjustedAddress", None),
         }
 
     return {
         "name": name,
         "phoneNumbers": phone_numbers,
         "thatsThemData": thatsthem_data,
+        "adjustedAddress": doc.get("adjustedAddress", None),
     }
 
 
@@ -236,7 +246,13 @@ def get_assessor_data_for_doc(doc, override_address=None, tries=1, autopilot=Fal
 def get_thatsthem_data(doc, override_address=None, autopilot=False):
     """ put together thatsthem data """
     try:
-        is_street = re.search(r"( St\s.*,| Street\s.*,)", doc["address"])
+        if not override_address and \
+           not autopilot and \
+           not doc.get("adjustedAddress", None) and \
+           doc.get("houseNumConflict", None):
+            raise AddressHouseNumberConflictException
+
+        is_street = re.search(r"[0-9]+ [NEWS] [0-9]+", doc["address"])
         if override_address:
             gather_address = override_address
 
@@ -273,6 +289,17 @@ def get_thatsthem_data(doc, override_address=None, autopilot=False):
 
             # give back empty result set
         add_phone_data(doc, compile_final_doc(doc, [], True, autopilot))
+
+    except AddressHouseNumberConflictException:
+        print("A house number conflict has been detected!")
+        print_assessor_permalink(doc)
+        print("On record: {}".format(doc.get("address")))
+        print("Would you like to review and correct now?")
+
+        if input("y/n: ") == "y":
+            new_address = input("Change to: ")
+            doc.update({"adjustedAddress": new_address})
+            return get_thatsthem_data(doc)
 
     except ThatsThemNoDataException:
         add_phone_data(doc, {

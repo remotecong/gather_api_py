@@ -105,6 +105,7 @@ def write_row(sheet, row, data):
     else:
         write_to_sheet(sheet, 5, row, data.letter, centered)
     write_to_sheet(sheet, 6, row, data.note, style)
+    sheet.row_dimensions[row].height = sheet.row_dimensions[row - 1].height
     return row + 1
 
 
@@ -135,7 +136,7 @@ def get_phones_for_resident(resident):
 
 def print_workbook(t_id):
     """  ready! to print """
-    workbook = open_workbook("template.xlsx")
+    workbook = open_workbook("template2.xlsx")
     add_default_styles(workbook)
 
     for street, residences in get_territory_docs(t_id):

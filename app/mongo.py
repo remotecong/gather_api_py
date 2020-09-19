@@ -25,13 +25,16 @@ class CoordsMissingException(Exception):
 
 def add_address(territory_id, doc):
     """ add address to collection it ain't already there """
-    if "coords" in doc:
-        if not ADDR.find_one({"coords": doc["coords"]}):
-            doc.update({"territoryId": territory_id})
-            doc["street"] = get_street(doc["address"])
-            ADDR.insert(doc)
-    else:
+    if "coords" not in doc:
         raise CoordsMissingException
+
+    if not ADDR.find_one({"coords": doc["coords"]}):
+        doc.update({
+            "territoryId": territory_id,
+            "street": get_street(doc["address"]),
+            "lastUpdate": datetime.now(),
+        })
+        ADDR.insert(doc)
 
 
 def doc_already_exists(doc):
