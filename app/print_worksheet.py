@@ -58,31 +58,51 @@ def make_street_sheet(workbook, t_id, street):
 
 COLS = [chr(65 + i) for i in range(26)]
 
-def write_to_sheet(sheet, col, row, val, style="default_style", dnc=False):
+def write_to_sheet(sheet, col, row, val, style="default_style"):
     """ write to sheet """
     loc = "{}{}".format(COLS[col], row)
     sheet[loc] = val
     if style:
         sheet[loc].style = style
-    if dnc:
-        sheet[loc].fill = PatternFill("solid", fgColor="f4cccc")
+    return sheet[loc]
 
 
-def write_row(sheet, row, data, dnc=False):
+def write_dnc_to_sheet(sheet, col, row, val, style="default_style"):
+    """ write dnc to sheet """
+    cell = write_to_sheet(sheet, col, row, val, style)
+    cell.fill = PatternFill("solid", fgColor="f4cccc")
+
+
+def write_dnc_row(sheet, row, data):
     """ print a whole row at a time """
     style = "top_row" if row == 3 else "default_style"
     centered = style + "_centered"
 
-    write_to_sheet(sheet, 0, row, data.name, style, dnc)
-    write_to_sheet(sheet, 1, row, data.address, style, dnc)
-    write_to_sheet(sheet, 2, row, data.phone, style, dnc)
-    write_to_sheet(sheet, 3, row, data.call1, centered, dnc)
-    write_to_sheet(sheet, 4, row, data.call2, centered, dnc)
+    write_dnc_to_sheet(sheet, 0, row, data.name, style)
+    write_dnc_to_sheet(sheet, 1, row, data.address, style)
+    write_dnc_to_sheet(sheet, 2, row, "Do Not Call", style)
+    write_dnc_to_sheet(sheet, 3, row, "DNC", centered)
+    write_dnc_to_sheet(sheet, 4, row, "DNC", centered)
+    write_dnc_to_sheet(sheet, 5, row, "DNC", centered)
+    write_dnc_to_sheet(sheet, 6, row, "", style)
+    return row + 1
+
+
+def write_row(sheet, row, data):
+    """ print a whole row at a time """
+    style = "top_row" if row == 3 else "default_style"
+    centered = style + "_centered"
+
+    write_to_sheet(sheet, 0, row, data.name, style)
+    write_to_sheet(sheet, 1, row, data.address, style)
+    write_to_sheet(sheet, 2, row, data.phone, style)
+    write_to_sheet(sheet, 3, row, data.call1, centered)
+    write_to_sheet(sheet, 4, row, data.call2, centered)
     if data.letter == "⃠":
-        write_to_sheet(sheet, 5, row, data.letter, centered + "_no_letter", dnc)
+        write_to_sheet(sheet, 5, row, data.letter, centered + "_no_letter")
     else:
-        write_to_sheet(sheet, 5, row, data.letter, centered, dnc)
-    write_to_sheet(sheet, 6, row, data.note, style, dnc)
+        write_to_sheet(sheet, 5, row, data.letter, centered)
+    write_to_sheet(sheet, 6, row, data.note, style)
     return row + 1
 
 
@@ -120,7 +140,7 @@ def print_workbook(t_id):
 
             # do not call check
             if resident.get("doNotCall", None):
-                row = write_row(sheet, row, Row(name, addr, "Do Not Call", "DNC", "DNC", "DNC"), True)
+                row = write_dnc_row(sheet, row, Row(name, addr))
                 continue
 
             phone_numbers = resident.get("phoneNumbers", [])
