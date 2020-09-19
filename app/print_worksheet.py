@@ -38,6 +38,7 @@ def add_default_styles(workbook):
         style.fill = PatternFill("solid", fgColor="b7b7b7")
         workbook.add_named_style(style)
 
+
 def create_workbook():
     """ create a workbook handle """
     return Workbook()
@@ -119,6 +120,17 @@ def remove_template_sheets(workbook):
     for name in ("Street Name",):
         workbook.remove(workbook[name])
 
+def get_phones_for_resident(resident):
+    """ clean way to get unique, sorted phone numbers """
+    phone_numbers = resident.get("phoneNumbers", [])
+
+    if phone_numbers:
+        return sorted(
+            list({p["number"] for p in phone_numbers}),
+            key=phone_number_sort
+        )[0:2]
+
+    return phone_numbers
 
 def print_workbook(t_id):
     """  ready! to print """
@@ -143,13 +155,8 @@ def print_workbook(t_id):
                 row = write_dnc_row(sheet, row, Row(name, addr))
                 continue
 
-            phone_numbers = resident.get("phoneNumbers", [])
-            if phone_numbers:
-                phones = sorted(
-                    list({p["number"] for p in phone_numbers}),
-                    key=phone_number_sort
-                )[0:2]
-
+            phones = get_phones_for_resident(resident)
+            if phones:
                 for i, phone in enumerate(phones):
                     if i > 0:
                         row_data = Row("▲", "▲", phone, None, None, "⃠")
@@ -165,14 +172,5 @@ def print_workbook(t_id):
     workbook.save(filename="{}.xlsx".format(t_id))
 
 
-if __name__ == "__main__":
+if __name__ == "__main__" and len(sys.argv) > 1:
     print_workbook(sys.argv[1])
-    # fetch all records
-    # for each street
-    # make_street_sheet and print residences
-        # make the printer work better, more reliably anyway
-        # print
-        # name | address | phone number OR dnc | first_note | second_note | letter_note | notes
-        # row is red if DNC
-        # letter is gray if NO sign
-    # save as territory.xlsx
