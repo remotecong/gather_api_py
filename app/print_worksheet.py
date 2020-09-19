@@ -10,6 +10,7 @@ from openpyxl.styles import NamedStyle, Font, Border, PatternFill, Side, Alignme
 from addresses import get_gather_address
 from names import pretty_print_name
 from print_territory import get_territory_docs, key_residence, phone_number_sort
+from disconnecteds import is_disconnected
 
 def add_default_styles(workbook):
     """ plug in reusable styles """
@@ -126,7 +127,7 @@ def get_phones_for_resident(resident):
 
     if phone_numbers:
         return sorted(
-            list({p["number"] for p in phone_numbers}),
+            list({p["number"] for p in phone_numbers if not is_disconnected(p)}),
             key=phone_number_sort
         )[0:2]
 
