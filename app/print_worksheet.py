@@ -5,7 +5,7 @@ from copy import copy
 from datetime import datetime
 
 from openpyxl import Workbook, load_workbook
-from openpyxl.styles import NamedStyle, Font, Border, Side, Alignment
+from openpyxl.styles import NamedStyle, Font, Border, PatternFill, Side, Alignment
 
 from addresses import get_gather_address
 from names import pretty_print_name
@@ -26,13 +26,17 @@ def add_default_styles(workbook):
     top_row.border = Border(top=thick_border, left=border, bottom=border, right=border)
     workbook.add_named_style(top_row)
 
-    centered = Alignment(horizontal="center")
+    centered = Alignment(horizontal="center", vertical="center")
     for style in (default_style, top_row):
         style = copy(style)
         style.name = style.name + "_centered"
         style.alignment = centered
         workbook.add_named_style(style)
 
+        style = copy(style)
+        style.name = style.name + "_no_letter"
+        style.fill = PatternFill("solid", fgColor="b7b7b7")
+        workbook.add_named_style(style)
 
 def create_workbook():
     """ create a workbook handle """
@@ -71,7 +75,10 @@ def write_row(sheet, row, data):
     write_to_sheet(sheet, 2, row, data.phone, style)
     write_to_sheet(sheet, 3, row, data.call1, centered)
     write_to_sheet(sheet, 4, row, data.call2, centered)
-    write_to_sheet(sheet, 5, row, data.letter, centered)
+    if data.letter == "⃠":
+        write_to_sheet(sheet, 5, row, data.letter, centered + "_no_letter")
+    else:
+        write_to_sheet(sheet, 5, row, data.letter, centered)
     write_to_sheet(sheet, 6, row, data.note, style)
     return row + 1
 
