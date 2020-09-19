@@ -1,7 +1,7 @@
 """ module to actual print the territory data """
 import sys
 from addresses import get_gather_address, get_street
-from mongo import get_all_docs_for
+from mongo import get_all_printable_docs_for
 from names import pretty_print_name
 
 def key_residence(res):
@@ -21,7 +21,7 @@ def ppp(name, address, phone, notes):
 def get_territory_docs(territory_id):
     """ collects all docs for territory """
     territory = {}
-    for doc in get_all_docs_for(territory_id):
+    for doc in get_all_printable_docs_for(territory_id):
         street = get_street(doc["address"])
         if street not in territory:
             territory[street] = []

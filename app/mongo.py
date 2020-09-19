@@ -122,9 +122,16 @@ def add_phone_data(doc, updates):
         "$set": updates
         })
 
+
+def get_all_printable_docs_for(territory_id):
+    """ get all docs for a given territory """
+    return ADDR.find({"territoryId": territory_id, "ownerLivesThere": {"$exists": True}})
+
+
 def get_all_docs_for(territory_id):
     """ get all docs for a given territory """
     return ADDR.find({"territoryId": territory_id})
+
 
 def get_all_docs():
     """ get every doc """
