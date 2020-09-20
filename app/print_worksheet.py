@@ -136,7 +136,7 @@ def get_phones_for_resident(resident):
 
 def print_workbook(t_id):
     """  ready! to print """
-    workbook = open_workbook("template2.xlsx")
+    workbook = open_workbook("template.xlsx")
     add_default_styles(workbook)
 
     for street, residences in get_territory_docs(t_id):

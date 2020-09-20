@@ -90,7 +90,9 @@ def write_dnc_row(sheet, row, data):
     write_dnc_to_sheet(sheet, 3, row, "DNC", centered)
     write_dnc_to_sheet(sheet, 4, row, "DNC", centered)
     write_dnc_to_sheet(sheet, 5, row, "DNC", centered)
-    write_dnc_to_sheet(sheet, 6, row, "", style)
+    write_dnc_to_sheet(sheet, 6, row, \
+                   "Assessor address conflicts! Please verify correct address and update!" \
+                   if data.conflict else "", style)
     return row + 1
 
 
@@ -101,19 +103,18 @@ def write_row(sheet, row, data):
 
     write_to_sheet(sheet, 0, row, data.name, style)
     write_to_sheet(sheet, 1, row, data.address, style)
-    write_to_sheet(sheet, 2, row, data.phone, style)
-    write_to_sheet(sheet, 3, row, data.call1, centered)
-    write_to_sheet(sheet, 4, row, data.call2, centered)
-    if data.letter == "⃠":
-        write_to_sheet(sheet, 5, row, data.letter, centered + "_no_letter")
-    else:
-        write_to_sheet(sheet, 5, row, data.letter, centered)
-    write_to_sheet(sheet, 6, row, data.note, style)
+    write_to_sheet(sheet, 2, row, "", style)
+    write_to_sheet(sheet, 3, row, "", centered)
+    write_to_sheet(sheet, 4, row, "", centered)
+    write_to_sheet(sheet, 5, row, "", centered)
+    write_to_sheet(sheet, 6, row, \
+                   "Assessor address conflicts! Please verify correct address and update!" \
+                   if data.conflict else "", style)
     sheet.row_dimensions[row].height = sheet.row_dimensions[row - 1].height
     return row + 1
 
 
-ROW_FIELDS = ("name", "address", "phone", "call1", "call2", "letter", "note")
+ROW_FIELDS = ("name", "address", "conflict")
 Row = namedtuple("Row", ROW_FIELDS, defaults=("",) * len(ROW_FIELDS))
 
 def stamp_last_updated(workbook, newest_date):
@@ -139,20 +140,23 @@ def print_workbook(t_id):
         youngest_change = datetime(2000, 1, 1)
 
         for resident in residences:
+            assessor_link = "https://www.assessor.tulsacounty.org/assessor-property.php" + \
+                "?account={}&go=1".format(resident.get("assessorAccountNumber"))
             addr = get_gather_address(resident["address"])
-            name = pretty_print_name(resident.get("name", None) or "Current Resident")
+
+            conflict = resident.get("houseNumConflict")
+            if conflict:
+                addr = "*" + addr
 
             if youngest_change < resident.get("lastUpdate"):
                 youngest_change = resident.get("lastUpdate")
 
             # do not call check
             if resident.get("doNotCall", None):
-                row = write_dnc_row(sheet, row, Row(name, addr))
+                row = write_dnc_row(sheet, row, Row(assessor_link, addr, conflict))
                 continue
 
-            assessor_link = "https://www.assessor.tulsacounty.org/assessor-property.php" + \
-                "?account={}&go=1".format(resident.get("assessorAccountNumber"))
-            row = write_row(sheet, row, Row(assessor_link, addr))
+            row = write_row(sheet, row, Row(assessor_link, addr, conflict))
 
     stamp_last_updated(workbook, youngest_change)
     remove_template_sheets(workbook)
