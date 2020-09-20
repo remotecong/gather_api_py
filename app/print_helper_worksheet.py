@@ -100,6 +100,12 @@ def write_row(sheet, row, data):
     """ print a whole row at a time """
     style = "top_row" if row == 3 else "default_style"
     centered = style + "_centered"
+    conflict_message = ""
+    if data.conflict:
+        map_link = "http://www.google.com/maps/place/{}".format(",".join(data.coords))
+
+        conflict_message = "Assessor address conflicts! Please verify correct address and update!"
+        conflict_message = "{}\n{}".format(conflict_message, map_link)
 
     write_to_sheet(sheet, 0, row, data.name, style)
     write_to_sheet(sheet, 1, row, data.address, style)
@@ -107,14 +113,12 @@ def write_row(sheet, row, data):
     write_to_sheet(sheet, 3, row, "", centered)
     write_to_sheet(sheet, 4, row, "", centered)
     write_to_sheet(sheet, 5, row, "", centered)
-    write_to_sheet(sheet, 6, row, \
-                   "Assessor address conflicts! Please verify correct address and update!" \
-                   if data.conflict else "", style)
+    write_to_sheet(sheet, 6, row, conflict_message, style)
     sheet.row_dimensions[row].height = sheet.row_dimensions[row - 1].height
     return row + 1
 
 
-ROW_FIELDS = ("name", "address", "conflict")
+ROW_FIELDS = ("name", "address", "coords", "conflict")
 Row = namedtuple("Row", ROW_FIELDS, defaults=("",) * len(ROW_FIELDS))
 
 def stamp_last_updated(workbook, newest_date):
@@ -130,7 +134,7 @@ def remove_template_sheets(workbook):
 
 def print_workbook(t_id):
     """  ready! to print """
-    workbook = open_workbook("template2.xlsx")
+    workbook = open_workbook("template.xlsx")
     add_default_styles(workbook)
 
     for street, residences in get_territory_docs(t_id):
@@ -143,6 +147,7 @@ def print_workbook(t_id):
             assessor_link = "https://www.assessor.tulsacounty.org/assessor-property.php" + \
                 "?account={}&go=1".format(resident.get("assessorAccountNumber"))
             addr = get_gather_address(resident["address"])
+            coords = [str(c) for c in resident["coords"]]
 
             conflict = resident.get("houseNumConflict")
             if conflict:
@@ -153,10 +158,10 @@ def print_workbook(t_id):
 
             # do not call check
             if resident.get("doNotCall", None):
-                row = write_dnc_row(sheet, row, Row(assessor_link, addr, conflict))
+                row = write_dnc_row(sheet, row, Row(assessor_link, addr, coords, conflict))
                 continue
 
-            row = write_row(sheet, row, Row(assessor_link, addr, conflict))
+            row = write_row(sheet, row, Row(assessor_link, addr, coords, conflict))
 
     stamp_last_updated(workbook, youngest_change)
     remove_template_sheets(workbook)

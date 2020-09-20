@@ -49,7 +49,9 @@ def print_territory(territory_id):
             conflict_message = ""
 
             if res.get("houseNumConflict"):
-                conflict_message = "Assessor's address doesn't match, please verify address and adjust as necessary!"
+                map_link = "http://www.google.com/maps/place/{}".format(",".join(res.get("coords")))
+                conflict_message = "Assessor's address doesn't match, please verify " + \
+                "address and adjust as necessary!\n{}".format(map_link)
                 printable_addr = "*" + printable_addr
 
             print("{}\t{}\t{}\t{}".format(printable_addr, url, conflict_message, dnc))
