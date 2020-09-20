@@ -39,7 +39,11 @@ def load_territory(t_id):
     return added_count
 
 
+def load_territory_with_logs(t_id):
+    """ load territory with logs along the way """
+    print("Loading Territory {}".format(t_id))
+    print("Added {} locations for {}.!".format(load_territory(t_id), t_id))
+
 if __name__ == "__main__":
     TARGET_TERR = sys.argv[1]
-    print("Loading Territory {}".format(TARGET_TERR))
-    print("Added {} locations for {}.!".format(load_territory(TARGET_TERR), TARGET_TERR))
+    load_territory_with_logs(TARGET_TERR)

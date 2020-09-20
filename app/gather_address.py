@@ -12,6 +12,7 @@ from mongo import (
 )
 from addresses import get_gather_address, get_verbose_address
 from geocode import find_location_by_bad_address
+from locations_convert import load_territory_with_logs
 from owner_info import get_owner_data
 from owner_parsers.tulsa import fetch_owner_data_from_permalink
 from thatsthem import get_phone_numbers, ThatsThemNoMatchException
@@ -343,6 +344,7 @@ if __name__ == "__main__":
         AUTOPILOT = len(sys.argv) > 2 and \
             sys.argv[2].strip() in ["--autopilot", "autopilot", "a", "-a"]
         print("<> <> pulling up territory {} {} <> <>".format(TERRITORY_ID, "(with autopilot)" if AUTOPILOT else ""))
+        load_territory_with_logs(TERRITORY_ID)
         pickup_territory_work(TERRITORY_ID, AUTOPILOT)
         print("<> <> done <> <>")
 
