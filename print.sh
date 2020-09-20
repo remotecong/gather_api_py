@@ -3,6 +3,7 @@ if [ -z "$TERR" ];
 then
   export TERR=$1
 fi
-python app/print_territory.py $TERR > ~/Desktop/$TERR.txt
-open ~/Desktop/$TERR.txt || xed ~/Desktop/$TERR.txt
-
+python app/print_worksheet.py $TERR
+sleep 1
+mv "${TERR}.xlsx" ~/Desktop
+open -a Finder ~/Desktop
