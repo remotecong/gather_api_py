@@ -1,6 +1,7 @@
 """ actually does the lookups """
 import re
 import sys
+import signal
 
 from mongo import (
     add_owner_data,
@@ -333,10 +334,34 @@ def fetch_all_missing_thatsthem_data(territory_id, autopilot):
 
 def pickup_territory_work(t_id, autopilot=False):
     """ running gather from script or as module """
+    load_locations_if_needed(t_id)
     get_assessor_data(t_id, autopilot)
     if not autopilot:
         finalize_pending_thatsthem_matches(t_id)
     fetch_all_missing_thatsthem_data(t_id, autopilot)
+
+
+def load_locations_if_needed(t_id):
+    """ checks if we have loaded locations for this territory recently """
+    try:
+        with open("territory_in_progress", "r+") as last:
+            if last.read() != t_id:
+                load_locations_for(t_id)
+    except FileNotFoundError:
+        load_locations_for(t_id)
+
+
+def load_locations_for(t_id):
+    """ loads locations for territory and logs it as last territory """
+    with open("territory_in_progress", "w") as record:
+        record.write(t_id)
+    load_territory_with_logs(t_id)
+
+
+def outatime():
+    """ if you did an autopilot """
+    print("Goodbye!")
+
 
 if __name__ == "__main__":
     if len(sys.argv) > 1:
@@ -344,8 +369,16 @@ if __name__ == "__main__":
         AUTOPILOT = len(sys.argv) > 2 and \
             sys.argv[2].strip() in ["--autopilot", "autopilot", "a", "-a"]
         print("<> <> pulling up territory {} {} <> <>".format(TERRITORY_ID, "(with autopilot)" if AUTOPILOT else ""))
-        load_territory_with_logs(TERRITORY_ID)
         pickup_territory_work(TERRITORY_ID, AUTOPILOT)
+
+        if AUTOPILOT:
+            signal.signal(signal.SIGALRM, outatime)
+            signal.alarm(3)
+            print("Would you like to go through the thatsthems that need verification?")
+            if input("y/n: ") == "y":
+                signal.alarm(0)
+                finalize_pending_thatsthem_matches(TERRITORY_ID)
+
         print("<> <> done <> <>")
 
     else:
