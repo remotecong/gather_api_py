@@ -50,19 +50,20 @@ def parse_html(html):
         # if it happens repeatedly
         raise ThatsThemNoMatchException
 
-    return [parse_row(r) for r in rows]
+    return list(parse_rows(rows))
 
-def parse_row(row):
+def parse_rows(rows):
     """ convert data """
-    return {
-        'name': row.find('h2').text.strip(),
-        'numbers': [get_phone_number(r) for r in row.find_all(itemprop='telephone')],
-    }
+    for row in rows:
+        name = row.find('h2').text.strip()
+        for elem in row.find_all(itemprop="telephone"):
+            yield get_phone_number(name, elem)
 
 
-def get_phone_number(elem):
+def get_phone_number(name, elem):
     """ individual data conversion """
     return {
+        "name": name,
         'number': elem.text.strip(),
         'is_mobile': pydash.get(elem, 'parent.data-title') == 'Mobile',
     }

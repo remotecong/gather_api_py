@@ -83,7 +83,7 @@ def compile_final_doc(doc, thatsthem_data, ignore_no_data=False, autopilot=False
     for thatsthem in thatsthem_data:
         if lname_re.search(thatsthem["name"]):
             thats_them_match_count += 1
-            phone_numbers = phone_numbers + thatsthem["numbers"]
+            phone_numbers = phone_numbers + thatsthem.get("numbers", [])
 
     if not autopilot and thats_them_match_count == 0 and ("skip_no_match" not in doc or not doc["skip_no_match"]):
         assessor_acct_num = doc.get("assessorAccountNumber", None)

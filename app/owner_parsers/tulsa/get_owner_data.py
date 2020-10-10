@@ -52,9 +52,9 @@ def get_owner_data(html):
     # does owner live there?
     if not house_number and mailing_address:
         house_number = mailing_address.split()[0]
-    lives_there = house_number and ( \
-            (house_number and house_number in mailing_address) or \
-            (homestead and is_po_box(mailing_address)))
+    lives_there = homestead or \
+            (house_number and house_number and house_number in mailing_address) or \
+            is_po_box(mailing_address)
 
     # return results
     return {

@@ -1,7 +1,7 @@
 """ checks for po box addresses """
 import re
 
-UPS_BOXES = ("11063-D S MEMORIAL", "6528 E 101ST ST STE D")
+UPS_BOXES = ("11063-D S MEMORIAL", "6528 E 101ST ST STE D", "10026-A S MINGO RD")
 
 POBOX_RE = re.compile(r'PO BOX', flags=re.IGNORECASE)
 
