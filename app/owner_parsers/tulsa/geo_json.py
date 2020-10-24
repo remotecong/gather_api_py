@@ -1,12 +1,10 @@
 #!/usr/bin/env python
 import sys
 import json
+from pathlib import Path
 
 from shapely.geometry import Point
 from shapely.geometry.polygon import Polygon
-
-from geocode import find_coords_by_bad_address
-from mongo import add_phone_data, delete_doc, get_docs_without_coords
 
 def geo_jsons():
     """ paths """
@@ -35,9 +33,10 @@ def geo_jsons():
         "8431.geojson",
     ]
 
-def get_geojson(path):
+def get_geojson(filename):
     """ load up geojson """
-    with open(path, "r") as fh:
+    path = Path(__file__).parent / f"geo_json_data/{filename}"
+    with path.open() as fh:
         geo = json.loads(fh.read())
         return geo.get("features", [])
     return []
@@ -62,21 +61,3 @@ def find_acct_num(coords):
         if poly.contains(point):
             return acct_num
     return None
-
-if __name__ == "__main__":
-    lines = []
-    for doc in get_docs_without_coords():
-        coords = find_coords_by_bad_address(doc["address"])
-        print("searching for == {} ==> {}".format(doc["address"], coords))
-        if not coords:
-            if "assessorAccountNumber" not in doc and "ownerName" not in doc and "phoneNumbers" not in doc:
-                delete_doc(doc)
-            else:
-                lines.append("{} `{}` `{}` {}".format(doc["territoryId"], doc["_id"], doc["address"], doc.get("assessorAccountNumber", "??")))
-        else:
-            add_phone_data(doc, {
-                "coords": coords,
-                "assessorAccountNumber": find_acct_num(coords),
-            })
-    for l in sorted(lines):
-        print(l)
