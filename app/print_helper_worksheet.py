@@ -7,10 +7,20 @@ from datetime import datetime
 from openpyxl import Workbook, load_workbook
 from openpyxl.styles import NamedStyle, Font, Border, PatternFill, Side, Alignment
 
-from addresses import get_gather_address
-from names import pretty_print_name
-from print_territory import get_territory_docs, key_residence, phone_number_sort
-from disconnecteds import is_disconnected
+from mongo import get_all_docs_for
+from addresses import get_gather_address, get_street
+from print_territory import key_residence
+
+def get_territory_docs(territory_id):
+    """ collects all docs for territory """
+    territory = {}
+    for doc in get_all_docs_for(territory_id):
+        street = get_street(doc["address"])
+        if street not in territory:
+            territory[street] = []
+        territory[street].append(doc)
+    return territory.items()
+
 
 def add_default_styles(workbook):
     """ plug in reusable styles """
@@ -137,11 +147,12 @@ def print_workbook(t_id):
     workbook = open_workbook("template.xlsx")
     add_default_styles(workbook)
 
+    youngest_change = datetime(2000, 1, 1)
+
     for street, residences in get_territory_docs(t_id):
         residences.sort(key=key_residence)
         row = 3
         sheet = make_street_sheet(workbook, t_id, street)
-        youngest_change = datetime(2000, 1, 1)
 
         for resident in residences:
             assessor_link = "https://www.assessor.tulsacounty.org/assessor-property.php" + \
