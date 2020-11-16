@@ -8,7 +8,7 @@ from openpyxl import Workbook, load_workbook
 from openpyxl.styles import NamedStyle, Font, Border, PatternFill, Side, Alignment
 
 from mongo import get_all_docs_for
-from addresses import get_gather_address, get_street
+from addresses import get_gather_address, get_street, get_zip
 from print_territory import key_residence
 
 def get_territory_docs(territory_id):
@@ -60,11 +60,12 @@ def open_workbook(path):
     return load_workbook(filename=path)
 
 
-def make_street_sheet(workbook, t_id, street):
+def make_street_sheet(workbook, t_id, street, postcode):
     """ copies template and makes sure that we print everything """
     current_street_sheet = workbook.copy_worksheet(workbook["Street Name"])
     current_street_sheet.title = street
     write_to_sheet(current_street_sheet, 0, 1, t_id, None)
+    write_to_sheet(current_street_sheet, 1, 1, postcode, None)
     return current_street_sheet
 
 
@@ -152,7 +153,8 @@ def print_workbook(t_id):
     for street, residences in get_territory_docs(t_id):
         residences.sort(key=key_residence)
         row = 3
-        sheet = make_street_sheet(workbook, t_id, street)
+        postcode = get_zip(residences[0]["address"])
+        sheet = make_street_sheet(workbook, t_id, street, postcode)
 
         for resident in residences:
             assessor_link = "https://www.assessor.tulsacounty.org/assessor-property.php" + \

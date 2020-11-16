@@ -59,6 +59,13 @@ def get_street(address):
             printed_pieces.append(street)
     return " ".join(printed_pieces)
 
+def get_zip(address):
+    """ get zip code from long address """
+    pieces = usaddress.tag(address)[0]
+    if "ZipCode" in pieces:
+        return pieces["ZipCode"]
+    return "Zip Code Not Found!"
+
 
 def get_gather_address(address):
     """ get gather address from address """

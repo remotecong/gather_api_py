@@ -3,7 +3,7 @@ import sys
 import pandas as pd
 
 from mongo import add_address, doc_already_exists
-from geo_json import find_acct_num
+from owner_parsers.tulsa.geo_json import find_acct_num
 
 
 def get_new_docs(t_id):

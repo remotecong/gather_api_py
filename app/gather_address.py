@@ -17,7 +17,7 @@ from locations_convert import load_territory_with_logs
 from owner_info import get_owner_data
 from owner_parsers.tulsa import fetch_owner_data_from_permalink
 from thatsthem import get_phone_numbers, ThatsThemNoMatchException
-from geo_json import find_acct_num
+from owner_parsers.tulsa.geo_json import find_acct_num
 
 
 class ThatsThemNoDataException(Exception):
