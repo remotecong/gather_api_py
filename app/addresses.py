@@ -75,19 +75,19 @@ def get_gather_address(address):
     pre_directional = addr_pieces.get("StreetNamePreDirectional", None)
     if not pre_directional:
         return "{} {} {}, {}, {}".format(
-            addr_pieces["AddressNumber"],
-            addr_pieces["StreetName"],
-            addr_pieces["StreetNamePostType"],
-            addr_pieces["PlaceName"],
-            addr_pieces["StateName"]
+            addr_pieces.get("AddressNumber", "NNNN"),
+            addr_pieces.get("StreetName", "xxxx"),
+            addr_pieces.get("StreetNamePostType", "?"),
+            addr_pieces.get("PlaceName", "St?"),
+            addr_pieces.get("StateName", "STATE"),
             )
     return "{} {} {} {}, {}, {}".format(
-        addr_pieces["AddressNumber"],
+        addr_pieces.get("AddressNumber", "???"),
         pre_directional,
-        addr_pieces["StreetName"],
-        addr_pieces["StreetNamePostType"],
-        addr_pieces["PlaceName"],
-        addr_pieces["StateName"]
+        addr_pieces.get("StreetName", "??"),
+        addr_pieces.get("StreetNamePostType", "??"),
+        addr_pieces.get("PlaceName", "??"),
+        addr_pieces.get("StateName", "??")
         )
 
 if __name__ == "__main__":

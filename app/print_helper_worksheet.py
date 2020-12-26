@@ -71,12 +71,25 @@ def make_street_sheet(workbook, t_id, street, postcode):
 
 COLS = [chr(65 + i) for i in range(26)]
 
+def get_sheet_location(col, row):
+    """ makes string for writing to sheet """
+    return f"{COLS[col]}{row}"
+
+
+def write_link_to_sheet(sheet, col, row, label, url, style="default_style"):
+    """ write hyperlinks to sheet with options! """
+    loc = get_sheet_location(col, row)
+    sheet[loc].hyperlink = url
+    sheet[loc].value = label
+    sheet[loc].style = style
+    return sheet[loc]
+
+
 def write_to_sheet(sheet, col, row, val, style="default_style"):
     """ write to sheet """
     loc = "{}{}".format(COLS[col], row)
     if style and col == 0:
-        sheet[loc].hyperlink = val
-        sheet[loc].value = "View Assessor Page"
+        write_link_to_sheet(sheet, col, row, "View Assessor Page", val, style)
     else:
         sheet[loc] = val
     if style:
@@ -125,6 +138,7 @@ def write_row(sheet, row, data):
     write_to_sheet(sheet, 4, row, "", centered)
     write_to_sheet(sheet, 5, row, "", centered)
     write_to_sheet(sheet, 6, row, conflict_message, style)
+    write_link_to_sheet(sheet, 10, row, "Assessor Link", data.name, style)
     sheet.row_dimensions[row].height = sheet.row_dimensions[row - 1].height
     return row + 1
 

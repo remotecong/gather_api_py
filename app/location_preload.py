@@ -5,7 +5,7 @@ import logging
 import pandas as pd
 from mongo import add_address, doc_already_exists
 from owner_parsers.tulsa import fetch_owner_data_from_permalink
-from geo_json import find_acct_num
+from owner_parsers.tulsa.geo_json import find_acct_num
 
 counter = 0
 
