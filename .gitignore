@@ -3,3 +3,7 @@ assessor.html
 data.json
 tt.html
 .config
+sample.xlsx
+venv/
+.env
+territory_in_progress
