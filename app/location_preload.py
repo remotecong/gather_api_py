@@ -42,8 +42,9 @@ if __name__ == "__main__":
                 "address": DATA.at[r, "Address"],
                 "doNotCall": DATA.at[r, "Status"] == "Do not call",
                 "coords": coords,
+                "territoryId": DATA.at[r, "Territory number"]
             }
-            if not doc_already_exists({"coords": coords}):
+            if doc["territoryId"] in ("28C") and not doc_already_exists({"coords": coords}):
                 acct_num = find_acct_num(coords)
                 if acct_num:
                     doc["assessorAccountNumber"] = acct_num

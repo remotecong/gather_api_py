@@ -60,27 +60,40 @@ def get_street(address):
     return " ".join(printed_pieces)
 
 
+def get_sheet_street(address):
+    """ get street name for sheet """
+    addr_pieces = usaddress.tag(address)[0]
+
+    # debug a bit
+    pre_directional = addr_pieces.get("StreetNamePreDirectional", "")
+    if pre_directional:
+        pre_directional = pre_directional + " "
+    return "{} {} {}, {}, {} {}".format(
+        pre_directional,
+        addr_pieces.get("StreetName", "??"),
+        addr_pieces.get("StreetNamePostType", "??"),
+        addr_pieces.get("PlaceName", "??"),
+        addr_pieces.get("StateName", "??"),
+        addr_pieces.get("ZipCode", "?????")
+    )
+
+
 def get_gather_address(address):
     """ get gather address from address """
     addr_pieces = usaddress.tag(address)[0]
 
     # debug a bit
-    pre_directional = addr_pieces.get("StreetNamePreDirectional", None)
-    if not pre_directional:
-        return "{} {} {}, {}, {}".format(
-            addr_pieces["AddressNumber"],
-            addr_pieces["StreetName"],
-            addr_pieces["StreetNamePostType"],
-            addr_pieces["PlaceName"],
-            addr_pieces["StateName"]
-            )
-    return "{} {} {} {}, {}, {}".format(
-        addr_pieces["AddressNumber"],
+    pre_directional = addr_pieces.get("StreetNamePreDirectional", "")
+    if pre_directional:
+        pre_directional = pre_directional + " "
+    return "{} {} {} {}, {}, {} {}".format(
+        addr_pieces.get("AddressNumber", "??"),
         pre_directional,
-        addr_pieces["StreetName"],
-        addr_pieces["StreetNamePostType"],
-        addr_pieces["PlaceName"],
-        addr_pieces["StateName"]
+        addr_pieces.get("StreetName", "??"),
+        addr_pieces.get("StreetNamePostType", "??"),
+        addr_pieces.get("PlaceName", "??"),
+        addr_pieces.get("StateName", "??"),
+        addr_pieces.get("ZipCode", "?????")
         )
 
 if __name__ == "__main__":
